@@ -1,0 +1,545 @@
+// WorshipFlow — relational schema
+// Ships with SQLite for zero-config local/demo use. Every table is written to be
+// PostgreSQL-compatible: switch `provider` to "postgresql" and update
+// DATABASE_URL to migrate. All enums are stored as strings + validated in
+// src/lib/constants.ts so the same schema works on both engines.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── Core / tenancy ───────────────────────────
+
+model Organization {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  timezone       String   @default("Africa/Kampala")
+  currency       String   @default("UGX")
+  setupCompleted Boolean  @default(false)
+  branding       String? // JSON {primary, gold, name} — theme overrides
+  createdAt      DateTime @default(now())
+
+  campuses         Campus[]
+  users            User[]
+  people           Person[]
+  teams            Team[]
+  serviceTypes     ServiceType[]
+  templates        ServiceTemplate[]
+  services         Service[]
+  songs            Song[]
+  media            MediaFile[]
+  rehearsals       Rehearsal[]
+  channels         Channel[]
+  notifications    Notification[]
+  tasks            Task[]
+  auditLogs        AuditLog[]
+  paymentProviders PaymentProvider[]
+  eventFolders     EventFolder[]
+  grants           PermissionGrant[]
+}
+
+// Folders group events/services (e.g. "Sunday Services", "Conferences").
+model EventFolder {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  color          String   @default("#4F46E5")
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  services     Service[]
+
+  @@index([organizationId, sortOrder])
+}
+
+// Admin-granted capability for a specific user ("only admins can give rights").
+model PermissionGrant {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  capability     String // manage_services | manage_songs | manage_teams | manage_people | manage_rehearsals | schedule | view_analytics
+  grantedById    String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([userId, capability])
+}
+
+model Campus {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  address        String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  venues       Venue[]
+  services     Service[]
+  teams        Team[]
+  people       Person[]
+  rehearsals   Rehearsal[]
+}
+
+model Venue {
+  id       String  @id @default(cuid())
+  campusId String
+  name     String
+  capacity Int?
+
+  campus   Campus    @relation(fields: [campusId], references: [id])
+  services Service[]
+}
+
+model User {
+  id             String   @id @default(cuid())
+  organizationId String
+  email          String   @unique
+  passwordHash   String
+  name           String
+  role           String   @default("VOLUNTEER")
+  notifPrefs     String? // JSON {email:boolean, sms:boolean, push:boolean}
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  person       Person?      @relation(fields: [personId], references: [id])
+  personId     String?      @unique
+  sessions     Session[]
+  messages     Message[]
+  comments     Comment[]
+  notifications Notification[]
+  grants       PermissionGrant[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// People are schedulable profiles; a User account links to one (optional).
+model Person {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  name               String
+  email              String?
+  phone              String?
+  whatsapp           String?
+  campusId           String?
+  notes              String?
+  skills             String?
+  preferredFrequency Int      @default(2) // services per month
+  createdAt          DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?
+  campus       Campus?      @relation(fields: [campusId], references: [id])
+
+  teamMemberships TeamMember[]       @relation("PersonMemberships")
+  ledTeams        Team[]             @relation("TeamLeader")
+  assignments     Assignment[]
+  blockouts       Blockout[]
+  attendance      Attendance[]
+  ledServices     Service[]         @relation("ServiceLeader")
+  worshipLed      Service[]         @relation("WorshipLeader")
+  preaching       Service[]         @relation("Preacher")
+  rehearsalMember RehearsalMember[]
+  assignedTasks   Task[]            @relation("TaskAssignee")
+}
+
+// ─────────────────────────── Teams & positions ───────────────────────────
+
+model Team {
+  id             String   @id @default(cuid())
+  organizationId String
+  campusId       String?
+  name           String
+  category       String   @default("MINISTRY") // WORSHIP | PRODUCTION | MINISTRY | CHOIR | CUSTOM
+  color          String   @default("brand")
+  description    String?
+  leaderPersonId String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  campus       Campus?      @relation(fields: [campusId], references: [id])
+  leader       Person?      @relation("TeamLeader", fields: [leaderPersonId], references: [id])
+
+  positions   Position[]
+  members     TeamMember[]
+  assignments Assignment[]
+  rehearsals  Rehearsal[]
+}
+
+model Position {
+  id        String @id @default(cuid())
+  teamId    String
+  name      String
+  sortOrder Int    @default(0)
+  skills    String?
+
+  team Team @relation(fields: [teamId], references: [id])
+}
+
+model TeamMember {
+  id       String   @id @default(cuid())
+  teamId   String
+  personId String
+  isLeader Boolean  @default(false)
+  skills   String?
+  status   String   @default("ACTIVE")
+  joinedAt DateTime @default(now())
+
+  team   Team   @relation(fields: [teamId], references: [id])
+  person Person @relation("PersonMemberships", fields: [personId], references: [id])
+
+  @@unique([teamId, personId])
+}
+
+// ─────────────────────────── Services ───────────────────────────
+
+model ServiceType {
+  id                String @id @default(cuid())
+  organizationId    String
+  name              String
+  color             String @default("brand")
+  defaultStart      String? // "09:00"
+  defaultDurationMin Int?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  services     Service[]
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  organizationId  String
+  campusId        String
+  venueId         String?
+  typeId          String
+  title           String
+  date            String // YYYY-MM-DD (church-local date)
+  startTime       String // HH:MM
+  endTime         String // HH:MM
+  worshipLeaderId String?
+  preacherId      String?
+  serviceLeaderId String?
+  theme           String?
+  scripture       String?
+  notes           String?
+  status          String   @default("PLANNING") // PLANNING | READY | COMPLETED
+  liveItemId      String?
+  liveAnnouncement String?
+  folderId        String?
+  createdAt       DateTime @default(now())
+
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  campus       Campus         @relation(fields: [campusId], references: [id])
+  venue        Venue?         @relation(fields: [venueId], references: [id])
+  type         ServiceType    @relation(fields: [typeId], references: [id])
+  worshipLeader Person?       @relation("WorshipLeader", fields: [worshipLeaderId], references: [id])
+  preacher      Person?       @relation("Preacher", fields: [preacherId], references: [id])
+  serviceLeader Person?       @relation("ServiceLeader", fields: [serviceLeaderId], references: [id])
+  folder       EventFolder?   @relation(fields: [folderId], references: [id])
+
+  items       ServiceItem[]
+  assignments Assignment[]
+  rehearsals  Rehearsal[]
+  tasks       Task[]
+  comments    Comment[]
+  attendance  Attendance[]
+  media       MediaFile[]
+}
+
+model ServiceItem {
+  id         String @id @default(cuid())
+  serviceId  String
+  sortOrder  Int    @default(0)
+  title      String
+  type       String @default("OTHER") // see ITEM_TYPES
+  durationSec Int   @default(300)
+  personId   String?
+  teamId     String?
+  songId     String?
+  key        String?
+  notes      String?
+  color      String?
+  status     String @default("PLANNED")
+  details    String? // JSON — media links, lyrics pointers
+
+  service Service @relation(fields: [serviceId], references: [id])
+  song    Song?   @relation(fields: [songId], references: [id])
+}
+
+model ServiceTemplate {
+  id             String @id @default(cuid())
+  organizationId String
+  name           String
+  typeId         String?
+  items          String // JSON [{title,type,durationSec}]
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}
+
+model Assignment {
+  id           String    @id @default(cuid())
+  serviceId    String
+  teamId       String
+  positionName String
+  personId     String?
+  status       String    @default("OPEN") // OPEN|PENDING|ACCEPTED|DECLINED|REPLACEMENT_REQUESTED|CONFIRMED
+  note         String?
+  notifiedAt   DateTime?
+  respondedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  service Service @relation(fields: [serviceId], references: [id])
+  team    Team    @relation(fields: [teamId], references: [id])
+  person  Person? @relation(fields: [personId], references: [id])
+
+  @@index([serviceId, status])
+}
+
+model Blockout {
+  id        String  @id @default(cuid())
+  personId  String
+  startDate String // YYYY-MM-DD
+  endDate   String
+  reason    String?
+  weekday   Int? // 0-6 recurring weekly unavailability
+
+  person Person @relation(fields: [personId], references: [id])
+}
+
+model Attendance {
+  id        String @id @default(cuid())
+  serviceId String
+  personId  String
+  status    String @default("PRESENT") // PRESENT|ABSENT|LATE
+  note      String?
+
+  service Service @relation(fields: [serviceId], references: [id])
+  person  Person  @relation(fields: [personId], references: [id])
+
+  @@unique([serviceId, personId])
+}
+
+// ─────────────────────────── Music ───────────────────────────
+
+model Song {
+  id          String   @id @default(cuid())
+  organizationId String
+  title       String
+  artist      String?
+  writer      String?
+  defaultKey  String?
+  bpm         Int?
+  genre       String?
+  tags        String? // csv: faithfulness, healing
+  ccliNumber  String?
+  copyright   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  organization Organization  @relation(fields: [organizationId], references: [id])
+  arrangements Arrangement[]
+  items        ServiceItem[]
+  media        MediaFile[]
+}
+
+model Arrangement {
+  id     String @id @default(cuid())
+  songId String
+  name   String // Original | Acoustic | Full Band …
+  key    String?
+  bpm    Int?
+  chart  String @default("")
+  lyrics String @default("")
+  notes  String?
+
+  song Song @relation(fields: [songId], references: [id])
+}
+
+// ─────────────────────────── Rehearsals ───────────────────────────
+
+model Rehearsal {
+  id             String  @id @default(cuid())
+  organizationId String
+  serviceId      String?
+  teamId         String?
+  campusId       String?
+  title          String
+  date           String
+  startTime      String
+  endTime        String
+  location       String?
+  notes          String?
+  objectives     String?
+  checklist      String  @default("[]") // JSON [{key,label,done}]
+  createdAt      DateTime @default(now())
+
+  organization Organization      @relation(fields: [organizationId], references: [id])
+  service      Service?          @relation(fields: [serviceId], references: [id])
+  campus       Campus?           @relation(fields: [campusId], references: [id])
+  team         Team?             @relation(fields: [teamId], references: [id])
+  songs        RehearsalSong[]
+  members      RehearsalMember[]
+  media        MediaFile[]
+}
+
+model RehearsalSong {
+  id          String @id @default(cuid())
+  rehearsalId String
+  songId      String?
+  title       String @default("")
+  status      String @default("NOT_STARTED") // NOT_STARTED|LEARNING|REHEARSED|READY
+  notes       String?
+
+  rehearsal Rehearsal @relation(fields: [rehearsalId], references: [id])
+}
+
+model RehearsalMember {
+  id          String @id @default(cuid())
+  rehearsalId String
+  personId    String
+  attending   String @default("UNKNOWN") // YES|NO|UNKNOWN
+  note        String?
+
+  rehearsal Rehearsal @relation(fields: [rehearsalId], references: [id])
+  person    Person    @relation(fields: [personId], references: [id])
+}
+
+// ─────────────────────────── Files ───────────────────────────
+
+model MediaFile {
+  id             String   @id @default(cuid())
+  organizationId String
+  folder         String   @default("media") // songs|charts|sermons|plans|rehearsals|graphics|videos|production
+  name           String
+  type           String   @default("LINK") // AUDIO|VIDEO|PDF|IMAGE|LINK|FILE
+  url            String
+  songId         String?
+  serviceId      String?
+  rehearsalId    String?
+  sizeKb         Int?
+  uploadedBy     String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  song         Song?        @relation(fields: [songId], references: [id])
+  service      Service?     @relation(fields: [serviceId], references: [id])
+  rehearsal    Rehearsal?   @relation(fields: [rehearsalId], references: [id])
+}
+
+// ─────────────────────────── Communication ───────────────────────────
+
+model Channel {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String   @unique
+  purpose        String?
+  kind           String   @default("TEAM")
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  messages     Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  channelId String
+  userId    String
+  body      String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  serviceId String
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+
+  service Service @relation(fields: [serviceId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id             String    @id @default(cuid())
+  organizationId String
+  userId         String
+  title          String
+  body           String
+  kind           String    @default("INFO") // INFO|ASSIGNMENT|WARNING|SUCCESS
+  link           String?
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+}
+
+// ─────────────────────────── Tasks ───────────────────────────
+
+model Task {
+  id           String   @id @default(cuid())
+  organizationId String
+  serviceId    String?
+  rehearsalId  String?
+  title        String
+  assigneeId   String? // Person
+  dueDate      String?
+  priority     String   @default("MEDIUM") // LOW|MEDIUM|HIGH
+  status       String   @default("TODO") // TODO|IN_PROGRESS|DONE
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  service      Service?     @relation(fields: [serviceId], references: [id])
+  assignee     Person?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+}
+
+// ─────────────────────────── Audit & payments ───────────────────────────
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  entity         String?
+  entityId       String?
+  meta           String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+}
+
+// Provider-agnostic payment configuration. No keys are ever hardcoded —
+// credentials live in env vars / a future vault, referenced by `kind`.
+model PaymentProvider {
+  id             String  @id @default(cuid())
+  organizationId String
+  kind           String // MTN_MOMO | AIRTEL_MONEY | CARD | MOBILE_MONEY_GENERIC …
+  name           String
+  enabled        Boolean @default(false)
+  config         String? // JSON, non-secret hints only
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+}

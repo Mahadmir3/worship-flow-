@@ -1,0 +1,13 @@
+node_modules
+.next
+*.tsbuildinfo
+prisma/dev.db
+public/uploads
+.DS_Store
+.env
+.env*.local
+.open-next
+.dev.vars
+.wrangler
+node_modules/
+.next/

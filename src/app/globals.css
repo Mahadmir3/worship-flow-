@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── WorshipFlow theme tokens (rebrand via settings → theme) ─── */
+:root {
+  --wf-brand-50: 238 240 251;
+  --wf-brand-100: 221 225 246;
+  --wf-brand-200: 186 194 236;
+  --wf-brand-300: 147 159 223;
+  --wf-brand-400: 110 124 208;
+  --wf-brand-500: 79 94 191;
+  --wf-brand-600: 59 71 166;
+  --wf-brand-700: 50 58 140;
+  --wf-brand-800: 42 47 110;
+  --wf-brand-900: 31 35 80;
+  --wf-brand-950: 20 22 58;
+
+  --wf-gold-50: 251 246 234;
+  --wf-gold-100: 246 236 211;
+  --wf-gold-200: 237 216 166;
+  --wf-gold-300: 227 192 119;
+  --wf-gold-400: 217 172 79;
+  --wf-gold-500: 201 149 46;
+  --wf-gold-600: 169 120 36;
+  --wf-gold-700: 135 93 30;
+  --wf-gold-800: 101 69 26;
+  --wf-gold-900: 70 48 19;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-paper text-ink antialiased;
+  font-feature-settings: "cv02", "cv03";
+}
+
+/* Accessible focus ring — gold, high contrast on both light & dark surfaces */
+:focus-visible {
+  outline: 2px solid rgb(var(--wf-gold-500));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: rgb(var(--wf-brand-200));
+  color: rgb(var(--wf-brand-950));
+}
+
+/* Reduced motion (WCAG 2.2 – 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Low-bandwidth mode: kill shadows, blurs & decorative gradients */
+html.lowfi * {
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  text-shadow: none !important;
+}
+html.lowfi .wf-decor {
+  display: none !important;
+}
+
+/* Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--wf-brand-200)) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: rgb(var(--wf-brand-200)); border-radius: 8px; }
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-white shadow-card;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none select-none;
+  }
+  .btn-primary {
+    @apply btn bg-brand-700 text-white hover:bg-brand-800;
+  }
+  .btn-gold {
+    @apply btn bg-gold-500 text-white hover:bg-gold-600;
+  }
+  .btn-secondary {
+    @apply btn border border-line bg-white text-ink hover:bg-brand-50;
+  }
+  .btn-ghost {
+    @apply btn text-ink/70 hover:bg-brand-50 hover:text-ink;
+  }
+  .btn-danger {
+    @apply btn border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs rounded-lg;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink/55;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold;
+  }
+  .th {
+    @apply px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-ink/45;
+  }
+  .td {
+    @apply px-4 py-3 text-sm align-middle;
+  }
+}
+
+/* Chord chart monospace blocks */
+.chart-pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+/* Print: service orders */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  .card { box-shadow: none; border-color: #ddd; }
+}

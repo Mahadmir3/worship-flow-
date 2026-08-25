@@ -1,0 +1,19 @@
+{
+  // Cloudflare Workers config — deployed via `npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy`
+  // (or automatically by Cloudflare Workers Builds when connected to the GitHub repo).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "worshipflow",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "NODE_ENV": "production"
+  }
+  // Secrets (set once, never in git):
+  //   npx wrangler secret put DATABASE_URL   → Supabase pooler URI (port 6543, transaction mode)
+  //   npx wrangler secret put AUTH_SECRET    → random string (openssl rand -hex 32)
+}
