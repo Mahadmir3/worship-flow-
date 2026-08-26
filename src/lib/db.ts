@@ -2,53 +2,53 @@ import { PrismaClient } from "@prisma/client";
 
 /**
  * One client, two runtimes:
- *  - PostgreSQL (Supabase) in production / Cloudflare → uses the PrismaPg driver
- *    adapter (no native engine, Workers-compatible over nodejs_compat TCP).
- *  - SQLite for the local demo preview (no adapter needed).
- * The URL protocol decides.
+ *  - PostgreSQL (Supabase) in production / Cloudflare → PrismaPg driver adapter
+ *    (no native engine; runs on Workers via nodejs_compat TCP).
+ *  - SQLite for the local demo preview (plain engine client).
+ * The DATABASE_URL protocol decides. Constructing the Postgres client is async
+ * (dynamic adapter import), so the exported `prisma` is a chainable lazy proxy:
+ * any property path + call resolves through the client promise, e.g.
+ * `await prisma.user.findUnique(...)` works unchanged everywhere.
  */
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma?: Promise<PrismaClient> };
 
-async function makeClient(): Promise<PrismaClient> {
-  const url = process.env.DATABASE_URL || "";
-  if (url.startsWith("postgres")) {
-    const { PrismaPg } = await import("@prisma/adapter-pg");
-    const adapter = new PrismaPg({ connectionString: url });
-    return new PrismaClient({ adapter, log: ["error", "warn"] });
+function clientPromise(): Promise<PrismaClient> {
+  if (!globalForPrisma.prisma) {
+    const url = process.env.DATABASE_URL || "";
+    globalForPrisma.prisma = (async () => {
+      if (url.startsWith("postgres")) {
+        const { PrismaPg } = await import("@prisma/adapter-pg");
+        return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }), log: ["error", "warn"] });
+      }
+      return new PrismaClient({ log: ["error", "warn"] });
+    })();
   }
-  return new PrismaClient({ log: ["error", "warn"] });
-}
-
-/** Await this everywhere — e.g. `const prisma = await getPrisma()`. */
-export async function getPrisma(): Promise<PrismaClient> {
-  if (!globalForPrisma.prisma) globalForPrisma.prisma = await makeClient();
   return globalForPrisma.prisma;
 }
 
-/**
- * Back-compat: many modules import { prisma } directly. On SQLite (local demo)
- * we can construct synchronously; on Postgres the import is async, so this
- * synchronous proxy lazily awaits the promise behind every call.
- */
-export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
-  get(_t, prop, receiver) {
-    if (!globalForPrisma.prisma) globalForPrisma.prisma = makeClient();
-    const pending = globalForPrisma.prisma;
-    const value = (pending as unknown as Record<string | symbol, unknown>)[prop];
-    if (typeof value === "function") {
-      const fn = value as (...args: unknown[]) => unknown;
-      return (...args: unknown[]) => {
-        const call = () => fn.apply(pending as unknown as object, args);
-        return typeof (pending as unknown as Promise<unknown>).then === "function"
-          ? (pending as unknown as Promise<PrismaClient>).then((c) =>
-              (c as unknown as Record<string | symbol, (...a: unknown[]) => unknown>)[prop](...args)
-            )
-          : call();
-      };
-    }
-    return value;
-  },
-}) as PrismaClient;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyProxy(path: string[] = []): any {
+  return new Proxy(function () {}, {
+    get(_t, prop) {
+      if (prop === "then") return undefined; // never act like a promise itself
+      if (typeof prop === "symbol") return undefined;
+      return lazyProxy([...path, prop]);
+    },
+    apply(_t, _thisArg, args) {
+      return clientPromise().then((client) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let value: any = client;
+        for (const key of path) value = value?.[key];
+        return typeof value === "function" ? value.apply(client, args) : value;
+      });
+    },
+  });
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = globalForPrisma.prisma;
+export const prisma: PrismaClient = lazyProxy() as PrismaClient;
+
+/** Direct access to the real client when needed (scripts, transactions). */
+export function getPrisma(): Promise<PrismaClient> {
+  return clientPromise();
+}
