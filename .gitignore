@@ -11,3 +11,4 @@ public/uploads
 .wrangler
 node_modules/
 .next/
+.env.production.local

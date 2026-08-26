@@ -2,7 +2,7 @@
   "name": "worshipflow",
   "version": "0.1.0",
   "private": true,
-  "description": "WorshipFlow \u2014 the modern operating system for church worship teams.",
+  "description": "WorshipFlow — the modern operating system for church worship teams.",
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
@@ -16,7 +16,8 @@
     "db:generate:local": "prisma generate --schema prisma/schema.sqlite.prisma",
     "preview:worker": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "cf:build": "prisma generate --schema prisma/schema.prisma && opennextjs-cloudflare build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
