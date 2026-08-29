@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -127,6 +128,7 @@ export async function completeOnboardingStep(fd: FormData) {
   }
   revalidatePath("/onboarding");
   revalidatePath("/dashboard");
+  if (step === "finish") redirect("/dashboard");
 }
 
 

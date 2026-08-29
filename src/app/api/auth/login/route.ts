@@ -73,15 +73,17 @@ export async function POST(req: NextRequest) {
 
   const token = await createSession(user.id, { thirdParty: https });
   await audit(user.organizationId, user.id, "auth.login", "User", user.id);
-  console.log(`[login] ok ${email} → ${safeReturn} (thirdParty cookie: ${https})`);
+  // Fresh workplace: guide the owner to set up ministries & people before the dashboard.
+  const dest = safeReturn === "/dashboard" && user.organization.setupCompleted === false ? "/onboarding" : safeReturn;
+  console.log(`[login] ok ${email} → ${dest} (thirdParty cookie: ${https})`);
 
   if (wantsJson) {
     // Client-side flow: the browser JS decides whether cookies stuck and navigates itself.
-    const res = NextResponse.json({ ok: true, redirect: safeReturn, token });
+    const res = NextResponse.json({ ok: true, redirect: dest, token });
     // Non-httpOnly probe cookie so the client can detect cookie blocking.
     res.cookies.set("wf_probe", "1", { sameSite: https ? "none" : "lax", secure: https, path: "/", maxAge: 60 });
     return res;
   }
 
-  return NextResponse.redirect(new URL(safeReturn, base), 303);
+  return NextResponse.redirect(new URL(dest, base), 303);
 }
