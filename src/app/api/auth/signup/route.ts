@@ -109,8 +109,13 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  await createSession(user.id);
+  // Same embedded-preview fix as login: frame-friendly (SameSite=None) cookie when
+  // served over https, plus ?wf_token= fallback — middleware promotes it to the
+  // session cookie and strips it from the URL, so previews that block cookies
+  // entirely still land the new OWNER logged-in on /onboarding.
+  const https = isHttps(req);
+  const token = await createSession(user.id, { thirdParty: https });
   await audit(org.id, user.id, "org.create", "Organization", org.id, { name: orgName });
 
-  return NextResponse.redirect(new URL("/onboarding", pubUrl(req)), 303);
+  return NextResponse.redirect(new URL(`/onboarding?wf_token=${token}`, pubUrl(req)), 303);
 }
