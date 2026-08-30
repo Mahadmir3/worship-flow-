@@ -26,6 +26,27 @@
   --wf-gold-700: 135 93 30;
   --wf-gold-800: 101 69 26;
   --wf-gold-900: 70 48 19;
+
+  /* ─── Surfaces & neutrals (dark mode flips these — see html.dark) ─── */
+  --wf-paper: 247 245 242; /* page background   #F7F5F2 */
+  --wf-surface: 255 255 255; /* cards, inputs     #FFFFFF */
+  --wf-ink: 34 38 58; /* primary text     #22263A */
+  --wf-line: 232 228 221; /* hairlines        #E8E4DD */
+
+  /* Neumorphic sidebar shadows */
+  --wf-neu-dark: #d8d3ca;
+  --wf-neu-light: #ffffff;
+}
+
+/* ─── DARK THEME — one class flips every surface/token ─── */
+html.dark {
+  --wf-paper: 23 23 30;
+  --wf-surface: 32 33 41;
+  --wf-ink: 234 234 240;
+  --wf-line: 51 52 63;
+  --wf-neu-dark: #121218;
+  --wf-neu-light: #2c2d38;
+  color-scheme: dark;
 }
 
 html {
@@ -82,7 +103,7 @@ html.lowfi .wf-decor {
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-line bg-white shadow-card;
+    @apply rounded-2xl border border-line bg-surface shadow-card;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none select-none;
@@ -94,7 +115,7 @@ html.lowfi .wf-decor {
     @apply btn bg-gold-500 text-white hover:bg-gold-600;
   }
   .btn-secondary {
-    @apply btn border border-line bg-white text-ink hover:bg-brand-50;
+    @apply btn border border-line bg-surface text-ink hover:bg-brand-50;
   }
   .btn-ghost {
     @apply btn text-ink/70 hover:bg-brand-50 hover:text-ink;
@@ -106,7 +127,7 @@ html.lowfi .wf-decor {
     @apply px-3 py-1.5 text-xs rounded-lg;
   }
   .input {
-    @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition;
+    @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 outline-none transition;
   }
   .label {
     @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink/55;
@@ -135,4 +156,185 @@ html.lowfi .wf-decor {
   .no-print { display: none !important; }
   body { background: white; }
   .card { box-shadow: none; border-color: #ddd; }
+}
+
+/* =========================================================
+   NEUMORPHIC SIDEBAR (from the approved design)
+   Soft dual shadows on the page surface; red active pill;
+   collapsible with section labels that fold away.
+========================================================= */
+
+.wf-sidebar {
+  width: 264px;
+  padding: 20px 16px;
+  border-radius: 26px;
+  background: rgb(var(--wf-paper));
+  box-shadow:
+    10px 10px 22px var(--wf-neu-dark),
+    -10px -10px 22px var(--wf-neu-light);
+  transition:
+    width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.wf-sidebar.wf-collapsed {
+  width: 84px;
+  padding: 20px 12px;
+}
+
+.wf-sidebar .wf-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: rgb(var(--wf-ink) / 0.45);
+  margin: 16px 8px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.25s ease, height 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wf-sidebar.wf-collapsed .wf-label {
+  opacity: 0;
+  height: 0;
+  margin: 6px 0;
+}
+
+.wf-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 14px;
+  border-radius: 15px;
+  margin-bottom: 5px;
+  color: rgb(var(--wf-ink) / 0.55);
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease,
+    padding 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    gap 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wf-sidebar.wf-collapsed .wf-nav-item {
+  gap: 0;
+  justify-content: center;
+  padding: 10px;
+}
+
+.wf-nav-item svg {
+  flex-shrink: 0;
+}
+
+.wf-nav-item .wf-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 160px;
+  opacity: 1;
+  transition: opacity 0.28s ease, max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wf-sidebar.wf-collapsed .wf-nav-item .wf-text {
+  max-width: 0;
+  opacity: 0;
+}
+
+.wf-nav-item:not(.wf-active):hover {
+  color: rgb(var(--wf-ink));
+  background: rgb(var(--wf-paper));
+  box-shadow:
+    inset 3px 3px 6px var(--wf-neu-dark),
+    inset -3px -3px 6px var(--wf-neu-light);
+}
+
+.wf-nav-item:active {
+  transform: scale(0.985);
+}
+
+/* Active — the red gradient pill */
+.wf-nav-item.wf-active {
+  color: #fff;
+  background: linear-gradient(145deg, #a30601, #b81a13);
+  box-shadow: 4px 4px 10px var(--wf-neu-dark);
+}
+
+.wf-nav-item.wf-active:hover {
+  box-shadow:
+    inset 2px 2px 5px rgba(0, 0, 0, 0.3),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.15),
+    6px 6px 14px var(--wf-neu-dark);
+}
+
+.wf-count {
+  background: #a30601;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wf-sidebar.wf-collapsed .wf-count {
+  display: none;
+}
+
+/* Neumorphic icon tile (brand mark) */
+.wf-brand-tile {
+  box-shadow:
+    6px 7px 13px var(--wf-neu-dark),
+    -6px -7px 13px var(--wf-neu-light);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wf-brand-row:hover .wf-brand-tile {
+  transform: scale(1.035);
+}
+
+.wf-brand-row:active .wf-brand-tile {
+  transform: scale(0.96);
+  box-shadow:
+    inset 3px 3px 6px var(--wf-neu-dark),
+    inset -3px -3px 6px var(--wf-neu-light);
+}
+
+/* Collapse / expand button */
+.wf-collapse-btn {
+  color: rgb(var(--wf-ink) / 0.45);
+  border-radius: 10px;
+  transition: color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease, opacity 0.28s ease;
+}
+
+.wf-collapse-btn:hover {
+  color: #a30601;
+  box-shadow:
+    4px 4px 8px var(--wf-neu-dark),
+    -4px -4px 8px var(--wf-neu-light);
+}
+
+.wf-collapse-btn:active {
+  transform: scale(0.94);
+  box-shadow:
+    inset 2px 2px 5px var(--wf-neu-dark),
+    inset -2px -2px 5px var(--wf-neu-light);
+}
+
+/* Sidebar respects reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .wf-sidebar,
+  .wf-sidebar * {
+    transition-duration: 0.01ms !important;
+  }
 }

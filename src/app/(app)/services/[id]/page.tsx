@@ -214,7 +214,7 @@ export default async function ServiceDetailPage({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-line bg-white p-1.5 no-print" role="tablist">
+      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-line bg-surface p-1.5 no-print" role="tablist">
         {TABS.map((t) => (
           <Link
             key={t.id}
@@ -228,15 +228,15 @@ export default async function ServiceDetailPage({
             <t.icon className="h-4 w-4" />
             {t.label}
             {t.id === "team" && openCount > 0 && (
-              <span className={`chip ${tab === t.id ? "border-white/30 bg-white/20 text-white" : "border-amber-200 bg-amber-50 text-amber-700"}`}>{openCount}</span>
+              <span className={`chip ${tab === t.id ? "border-white/30 bg-surface/20 text-white" : "border-amber-200 bg-amber-50 text-amber-700"}`}>{openCount}</span>
             )}
             {t.id === "tasks" && service.tasks.filter((t2) => t2.status !== "DONE").length > 0 && (
-              <span className={`chip ${tab === t.id ? "border-white/30 bg-white/20 text-white" : "border-line bg-paper text-ink/60"}`}>
+              <span className={`chip ${tab === t.id ? "border-white/30 bg-surface/20 text-white" : "border-line bg-paper text-ink/60"}`}>
                 {service.tasks.filter((t2) => t2.status !== "DONE").length}
               </span>
             )}
             {t.id === "discussion" && service.comments.length > 0 && (
-              <span className={`chip ${tab === t.id ? "border-white/30 bg-white/20 text-white" : "border-line bg-paper text-ink/60"}`}>{service.comments.length}</span>
+              <span className={`chip ${tab === t.id ? "border-white/30 bg-surface/20 text-white" : "border-line bg-paper text-ink/60"}`}>{service.comments.length}</span>
             )}
           </Link>
         ))}
@@ -347,7 +347,7 @@ export default async function ServiceDetailPage({
                 </form>
               </div>
               {warnings.length > 0 && (
-                <div className="mt-4 space-y-1.5 rounded-xl border border-gold-200 bg-white/70 p-3.5">
+                <div className="mt-4 space-y-1.5 rounded-xl border border-gold-200 bg-surface/70 p-3.5">
                   <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-gold-800">
                     <AlertTriangle className="h-3.5 w-3.5" /> Scheduling engine warnings
                   </p>
@@ -575,7 +575,7 @@ export default async function ServiceDetailPage({
                                     <input type="hidden" name="assignmentId" value={a.id} />
                                     <input type="hidden" name="personId" value={c.personId} />
                                     <button
-                                      className="flex items-center gap-2 rounded-full border border-line bg-white py-1 pl-1 pr-3 text-xs font-semibold text-ink transition hover:border-brand-400 hover:bg-brand-50"
+                                      className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pl-1 pr-3 text-xs font-semibold text-ink transition hover:border-brand-400 hover:bg-brand-50"
                                       title={c.warnings.join("\n") || c.fit.join(", ")}
                                     >
                                       <Avatar name={c.name} size={22} />

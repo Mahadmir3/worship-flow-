@@ -215,7 +215,7 @@ export default async function PersonPage({ params: paramsPromise }: { params: Pr
                     {(manage || isSelf) && (
                       <form action={removeBlockout}>
                         <input type="hidden" name="blockoutId" value={b.id} />
-                        <button className="rounded-lg p-1.5 text-ink/35 hover:bg-white hover:text-rose-600" aria-label="Remove blockout">
+                        <button className="rounded-lg p-1.5 text-ink/35 hover:bg-surface hover:text-rose-600" aria-label="Remove blockout">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </form>

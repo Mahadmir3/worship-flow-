@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { canDo, canManageTeam } from "@/lib/perms";
@@ -113,6 +114,7 @@ export async function createPerson(fd: FormData) {
   }
   await audit(user.organizationId, user.id, "person.create", "Person", person.id, { name: person.name });
   revalidatePath("/people");
+  redirect(`/people/${person.id}`);
 }
 
 export async function updatePerson(fd: FormData) {

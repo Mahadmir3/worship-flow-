@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { canDo } from "@/lib/perms";
@@ -39,6 +40,7 @@ export async function createSong(fd: FormData) {
   });
   await audit(user.organizationId, user.id, "song.create", "Song", song.id, { title: song.title });
   revalidatePath("/songs");
+  redirect(`/songs/${song.id}`);
 }
 
 export async function updateSong(fd: FormData) {

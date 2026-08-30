@@ -35,7 +35,7 @@ export function UserMenu({ name, role, email }: { name: string; role: string; em
         <ChevronDown className="hidden h-4 w-4 text-ink/40 sm:block" />
       </button>
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-line bg-white shadow-pop">
+        <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-line bg-surface shadow-pop">
           <div className="border-b border-line px-4 py-3">
             <p className="truncate text-sm font-bold text-ink">{name}</p>
             <p className="truncate text-xs text-ink/45">{email}</p>

@@ -142,7 +142,7 @@ export default async function TasksPage({ searchParams: searchParamsPromise }: {
                             <form key={c.id} action={moveTask}>
                               <input type="hidden" name="taskId" value={t.id} />
                               <input type="hidden" name="status" value={c.id} />
-                              <button className="chip border-line bg-white text-ink/60 hover:border-brand-400 hover:text-brand-700">
+                              <button className="chip border-line bg-surface text-ink/60 hover:border-brand-400 hover:text-brand-700">
                                 → {c.label}
                               </button>
                             </form>

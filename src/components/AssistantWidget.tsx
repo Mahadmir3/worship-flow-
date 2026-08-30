@@ -77,7 +77,7 @@ export function AssistantWidget() {
           <div
             role="dialog"
             aria-label="WorshipFlow Assistant"
-            className="flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-white shadow-pop sm:h-[32rem] sm:w-[26rem] sm:rounded-3xl"
+            className="flex h-[85vh] w-full flex-col overflow-hidden rounded-t-3xl bg-surface shadow-pop sm:h-[32rem] sm:w-[26rem] sm:rounded-3xl"
           >
             <div className="flex items-center justify-between bg-gradient-to-r from-brand-800 to-brand-900 px-5 py-4 text-white">
               <div className="flex items-center gap-2.5">
@@ -89,7 +89,7 @@ export function AssistantWidget() {
                   <p className="text-[11px] text-brand-100/80">Service & scheduling copilot</p>
                 </div>
               </div>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg p-1.5 hover:bg-white/10">
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close assistant" className="rounded-lg p-1.5 hover:bg-surface/10">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -129,7 +129,7 @@ export function AssistantWidget() {
             </div>
 
             <form
-              className="flex items-center gap-2 border-t border-line bg-white p-3"
+              className="flex items-center gap-2 border-t border-line bg-surface p-3"
               onSubmit={(e) => {
                 e.preventDefault();
                 send(input);

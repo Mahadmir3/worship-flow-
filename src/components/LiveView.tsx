@@ -91,7 +91,7 @@ export function LiveView({
     <div className="fixed inset-0 z-[80] flex flex-col bg-brand-950 text-white">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
-        <a href={`/services/${serviceId}`} className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20">
+        <a href={`/services/${serviceId}`} className="inline-flex items-center gap-2 rounded-xl bg-surface/10 px-3 py-2 text-sm font-semibold hover:bg-surface/20">
           <ArrowLeft className="h-4 w-4" /> Exit live mode
         </a>
         <div className="text-center">
@@ -99,12 +99,12 @@ export function LiveView({
           <p className="text-xs text-brand-200/60">{items.length} items · {progress}% complete</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`chip ${running ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300" : "border-white/20 bg-white/10 text-brand-100"}`}>
+          <span className={`chip ${running ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-300" : "border-white/20 bg-surface/10 text-brand-100"}`}>
             <span className={`h-2 w-2 rounded-full ${running ? "animate-pulse bg-emerald-400" : "bg-brand-300"}`} />
             {running ? "Running" : "Paused"}
           </span>
           {canControl && (
-            <button type="button" onClick={() => setShowControls((s) => !s)} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-semibold hover:bg-white/20">
+            <button type="button" onClick={() => setShowControls((s) => !s)} className="rounded-xl bg-surface/10 px-3 py-2 text-sm font-semibold hover:bg-surface/20">
               {showControls ? "Hide" : "Show"} controls
             </button>
           )}
@@ -132,17 +132,17 @@ export function LiveView({
             </p>
           )}
           {current?.notes && (
-            <p className="mx-auto mt-4 max-w-xl rounded-2xl bg-white/10 px-5 py-3 text-sm text-brand-100/90">{current.notes}</p>
+            <p className="mx-auto mt-4 max-w-xl rounded-2xl bg-surface/10 px-5 py-3 text-sm text-brand-100/90">{current.notes}</p>
           )}
         </div>
 
         <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="rounded-2xl border border-white/10 bg-surface/5 p-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand-200/70">Next</p>
             <p className="mt-2 text-xl font-extrabold">{next ? next.title : "— end of service —"}</p>
             {next && <p className="text-xs text-brand-200/70">{fmtTime(next.startTime)}</p>}
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left">
+          <div className="rounded-2xl border border-white/10 bg-surface/5 p-5 text-left">
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-brand-200/70">Later</p>
             <ul className="mt-2 space-y-1 text-sm text-brand-100/85">
               {later.length ? later.map((i) => (
@@ -172,7 +172,7 @@ export function LiveView({
 
       {/* Progress */}
       <div className="px-6 pb-4">
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface/10" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
           <div className="h-full rounded-full bg-gradient-to-r from-gold-500 to-gold-300 transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
@@ -181,7 +181,7 @@ export function LiveView({
       {canControl && showControls && (
         <div className="border-t border-white/10 bg-brand-900/95 px-6 py-4">
           <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-3">
-            <button type="button" onClick={() => goTo(Math.max(idx - 1, 0))} className="btn bg-white/10 hover:bg-white/20" aria-label="Previous item">
+            <button type="button" onClick={() => goTo(Math.max(idx - 1, 0))} className="btn bg-surface/10 hover:bg-surface/20" aria-label="Previous item">
               <SkipBack className="h-5 w-5" />
             </button>
             <button type="button" onClick={() => goTo(Math.max(idx + 1, 0))} disabled={idx >= items.length - 1} className="btn bg-gold-500 hover:bg-gold-600" aria-label="Next item">
@@ -194,11 +194,11 @@ export function LiveView({
                 onChange={(e) => setDraftAnnouncement(e.target.value)}
                 placeholder="Emergency announcement…"
                 aria-label="Emergency announcement"
-                className="w-full rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-sm text-white placeholder:text-brand-200/50 outline-none focus:border-gold-300"
+                className="w-full rounded-xl border border-white/15 bg-surface/10 px-3.5 py-2 text-sm text-white placeholder:text-brand-200/50 outline-none focus:border-gold-300"
               />
               <button
                 type="button"
-                className="btn bg-white/10 hover:bg-white/20"
+                className="btn bg-surface/10 hover:bg-surface/20"
                 onClick={async () => {
                   await setLiveAnnouncement(serviceId, draftAnnouncement);
                   setAnnouncement(draftAnnouncement || null);

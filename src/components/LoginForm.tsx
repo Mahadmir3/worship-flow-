@@ -109,7 +109,7 @@ function PersonaButtons({
             type="button"
             disabled={busy}
             onClick={() => onLogin({ email: u.email, password: "grace2026" })}
-            className="flex w-full items-center justify-between rounded-xl border border-gold-200 bg-white px-3.5 py-2.5 text-left transition hover:border-gold-400 hover:bg-gold-100/60 disabled:opacity-50"
+            className="flex w-full items-center justify-between rounded-xl border border-gold-200 bg-surface px-3.5 py-2.5 text-left transition hover:border-gold-400 hover:bg-gold-100/60 disabled:opacity-50"
           >
             <span>
               <span className="block text-sm font-semibold text-ink">{u.name}</span>

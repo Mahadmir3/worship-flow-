@@ -150,7 +150,7 @@ export default async function SongPage({
             href={`/songs/${song.id}?arr=${a.id}`}
             role="tab"
             aria-selected={current?.id === a.id}
-            className={`chip whitespace-nowrap px-4 py-2 ${current?.id === a.id ? "border-brand-700 bg-brand-700 text-white" : "border-line bg-white text-ink/65 hover:border-brand-300"}`}
+            className={`chip whitespace-nowrap px-4 py-2 ${current?.id === a.id ? "border-brand-700 bg-brand-700 text-white" : "border-line bg-surface text-ink/65 hover:border-brand-300"}`}
           >
             {a.name}{a.key ? ` · ${a.key}` : ""}
           </Link>

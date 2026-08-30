@@ -72,7 +72,7 @@ export function SearchPalette() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center gap-2.5 rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink/40 transition hover:border-brand-300 hover:text-ink/60"
+        className="flex w-full items-center gap-2.5 rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink/40 transition hover:border-brand-300 hover:text-ink/60"
         aria-label="Search (Ctrl+K)"
       >
         <SearchIcon className="h-4 w-4" />
@@ -95,7 +95,7 @@ export function SearchPalette() {
         role="dialog"
         aria-modal="true"
         aria-label="Global search"
-        className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-pop"
+        className="w-full max-w-xl overflow-hidden rounded-2xl bg-surface shadow-pop"
       >
         <div className="flex items-center gap-3 border-b border-line px-4">
           <SearchIcon className="h-5 w-5 text-brand-400" />

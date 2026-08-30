@@ -63,7 +63,7 @@ export default async function BillingPage() {
               {isOwner ? (
                 <form action={togglePaymentProvider}>
                   <input type="hidden" name="providerId" value={p.id} />
-                  <button className={p.enabled ? "btn btn-sm border border-line bg-white text-ink/60" : "btn-primary btn-sm"}>
+                  <button className={p.enabled ? "btn btn-sm border border-line bg-surface text-ink/60" : "btn-primary btn-sm"}>
                     {p.enabled ? "Disable" : "Enable"}
                   </button>
                 </form>

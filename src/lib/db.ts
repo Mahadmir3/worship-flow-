@@ -7,12 +7,16 @@ import { PrismaClient } from "@prisma/client";
  *    (no native engine; runs on Workers via nodejs_compat TCP).
  *  - SQLite for the local demo preview (plain engine client).
  *
- * Workers caveat (learned the hard way): sockets do not survive isolate
- * suspension, so a pooled connection reused across requests hangs forever.
- * Per the OpenNext Cloudflare docs we therefore use `maxUses: 1` (one fresh
- * connection per query) and a per-request client (React cache()) — never a
- * global one. The exported `prisma` stays a chainable lazy proxy so call
- * sites are unchanged in both runtimes.
+ * Workers caveats (learned the hard way):
+ *  1. Sockets do not survive isolate suspension — a connection reused across
+ *     requests can hang forever. We therefore create a per-request pool
+ *     (React cache) so nothing is shared between requests.
+ *  2. Opening a fresh TLS connection per query is slow (~300-700ms each).
+ *     Within a request all queries now share ONE pooled connection, and:
+ *       - idleTimeoutMillis closes the socket seconds after the request ends
+ *         (nothing lingers long enough to die silently), and
+ *       - connectionTimeoutMillis guarantees a fast error instead of a hang
+ *         in the worst case.
  */
 
 function createClient(): Promise<PrismaClient> {
@@ -20,8 +24,21 @@ function createClient(): Promise<PrismaClient> {
     const url = process.env.DATABASE_URL || "";
     if (url.startsWith("postgres")) {
       const { PrismaPg } = await import("@prisma/adapter-pg");
+      // Pool tuning via PrismaPg's config (it wires TLS correctly for workerd —
+      // do NOT pass a hand-built Pool with an ssl object):
+      //  - max 10: queries within one request run in PARALLEL (a Promise.all
+      //    of 12 queries needs more than one wire, otherwise they queue
+      //    single-file and the page crawls)
+      //  - idleTimeoutMillis: sockets close seconds after the request ends,
+      //    so nothing lingers to die silently across isolate suspensions
+      //  - connectionTimeoutMillis: fast error instead of an infinite hang
       return new PrismaClient({
-        adapter: new PrismaPg({ connectionString: url, maxUses: 1 }),
+        adapter: new PrismaPg({
+          connectionString: url,
+          max: 10,
+          idleTimeoutMillis: 10_000,
+          connectionTimeoutMillis: 8_000,
+        }),
         log: ["error", "warn"],
       });
     }
@@ -30,7 +47,7 @@ function createClient(): Promise<PrismaClient> {
 }
 
 // Per-request singleton (React cache): repeated calls in the same render/action
-// share one client, but nothing is reused across requests.
+// share one client+connection, but nothing is reused across requests.
 export const getPrisma = cache(createClient);
 
 // Preview-only convenience: a stable client for the SQLite demo/seed scripts.

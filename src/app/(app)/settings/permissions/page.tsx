@@ -93,7 +93,7 @@ export default async function PermissionsPage() {
                           name="role"
                           defaultValue={u.role}
                           aria-label={`Level for ${u.name}`}
-                          className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-xs font-semibold text-ink/70"
+                          className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink/70"
                         >
                           {ROLES.filter((r) => r.id !== "OWNER").map((r) => (
                             <option key={r.id} value={r.id}>{r.label}</option>

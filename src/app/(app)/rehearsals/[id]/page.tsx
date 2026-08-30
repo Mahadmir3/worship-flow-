@@ -89,7 +89,7 @@ export default async function RehearsalPage({ params: paramsPromise }: { params:
                     <input type="hidden" name="rehearsalId" value={rehearsal.id} />
                     <input type="hidden" name="attending" value={v} />
                     <button
-                      className={`btn btn-sm ${myMembership?.attending === v ? "bg-brand-700 text-white" : "border border-line bg-white text-ink/70 hover:bg-brand-50"}`}
+                      className={`btn btn-sm ${myMembership?.attending === v ? "bg-brand-700 text-white" : "border border-line bg-surface text-ink/70 hover:bg-brand-50"}`}
                     >
                       {v === "YES" ? "I'm coming" : "Can't make it"}
                     </button>
@@ -210,7 +210,7 @@ export default async function RehearsalPage({ params: paramsPromise }: { params:
                       <button
                         aria-pressed={c.done}
                         className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition ${
-                          c.done ? "border-emerald-500 bg-emerald-500 text-white" : "border-line bg-white hover:border-brand-400"
+                          c.done ? "border-emerald-500 bg-emerald-500 text-white" : "border-line bg-surface hover:border-brand-400"
                         }`}
                         aria-label={`${c.done ? "Uncheck" : "Check"} ${c.label}`}
                       >

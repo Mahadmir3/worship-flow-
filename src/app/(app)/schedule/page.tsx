@@ -87,7 +87,7 @@ export default async function SchedulePage() {
                     </p>
                     <p className="mt-2 chip border-brand-200 bg-brand-50 text-brand-700">{a.positionName} · {a.team.name}</p>
                   </div>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-card">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface text-amber-600 shadow-card">
                     <Clock className="h-5 w-5" />
                   </span>
                 </div>
@@ -102,7 +102,7 @@ export default async function SchedulePage() {
                   <form action={respondToAssignment}>
                     <input type="hidden" name="assignmentId" value={a.id} />
                     <input type="hidden" name="action" value="decline" />
-                    <button className="btn btn-sm border border-rose-200 bg-white text-rose-600 hover:bg-rose-50">
+                    <button className="btn btn-sm border border-rose-200 bg-surface text-rose-600 hover:bg-rose-50">
                       <X className="h-4 w-4" /> Decline
                     </button>
                   </form>
@@ -110,7 +110,7 @@ export default async function SchedulePage() {
                     title="Request a replacement"
                     subtitle="Your team leader will be notified and will look for a substitute."
                     trigger={
-                      <button className="btn btn-sm border border-line bg-white text-ink/70 hover:bg-brand-50">
+                      <button className="btn btn-sm border border-line bg-surface text-ink/70 hover:bg-brand-50">
                         <RefreshCcw className="h-4 w-4" /> Request replacement
                       </button>
                     }
@@ -241,7 +241,7 @@ export default async function SchedulePage() {
                     </div>
                     <form action={removeBlockout}>
                       <input type="hidden" name="blockoutId" value={b.id} />
-                      <button className="rounded-lg p-1.5 text-ink/35 hover:bg-white hover:text-rose-600" aria-label="Remove blockout">
+                      <button className="rounded-lg p-1.5 text-ink/35 hover:bg-surface hover:text-rose-600" aria-label="Remove blockout">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </form>

@@ -58,7 +58,7 @@ export function Modal({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className={`max-h-[92vh] w-full ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"} overflow-y-auto rounded-t-3xl bg-white p-6 shadow-pop sm:rounded-3xl`}
+            className={`max-h-[92vh] w-full ${wide ? "sm:max-w-3xl" : "sm:max-w-lg"} overflow-y-auto rounded-t-3xl bg-surface p-6 shadow-pop sm:rounded-3xl`}
           >
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>

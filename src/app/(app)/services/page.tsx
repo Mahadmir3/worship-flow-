@@ -82,7 +82,7 @@ export default async function ServicesPage({
           href="/services"
           role="tab"
           aria-selected={!activeFolder}
-          className={`chip whitespace-nowrap px-4 py-2 ${!activeFolder ? "border-brand-700 bg-brand-700 text-white" : "border-line bg-white text-ink/65 hover:border-brand-300"}`}
+          className={`chip whitespace-nowrap px-4 py-2 ${!activeFolder ? "border-brand-700 bg-brand-700 text-white" : "border-line bg-surface text-ink/65 hover:border-brand-300"}`}
         >
           <FolderIcon /> All events <span className="opacity-60">{services.length}</span>
         </Link>
@@ -92,7 +92,7 @@ export default async function ServicesPage({
             href={`/services?folder=${f.id}`}
             role="tab"
             aria-selected={activeFolder?.id === f.id}
-            className={`chip whitespace-nowrap px-4 py-2 ${activeFolder?.id === f.id ? "border-brand-700 bg-brand-700 text-white" : "border-line bg-white text-ink/65 hover:border-brand-300"}`}
+            className={`chip whitespace-nowrap px-4 py-2 ${activeFolder?.id === f.id ? "border-brand-700 bg-brand-700 text-white" : "border-line bg-surface text-ink/65 hover:border-brand-300"}`}
           >
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: f.color }} aria-hidden />
             {f.name} <span className="opacity-60">{f._count.services}</span>
@@ -103,7 +103,7 @@ export default async function ServicesPage({
             title="New folder"
             subtitle="Group your events — e.g. Sundays, conferences, weddings."
             trigger={
-              <button className="chip whitespace-nowrap border-dashed border-line bg-white px-3 py-2 text-ink/55 hover:border-brand-400 hover:text-brand-700">
+              <button className="chip whitespace-nowrap border-dashed border-line bg-surface px-3 py-2 text-ink/55 hover:border-brand-400 hover:text-brand-700">
                 <FolderPlus className="h-3.5 w-3.5" /> New folder
               </button>
             }

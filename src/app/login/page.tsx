@@ -45,7 +45,7 @@ export default async function LoginPage({
           </p>
           <div className="mt-10 hidden grid-cols-2 gap-4 sm:grid">
             {FEATURES.map((f) => (
-              <div key={f.title} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+              <div key={f.title} className="rounded-2xl bg-surface/5 p-4 ring-1 ring-white/10">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-500/20 text-gold-300">
                   {f.icon}
                 </span>

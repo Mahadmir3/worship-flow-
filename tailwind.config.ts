@@ -35,9 +35,14 @@ const config: Config = {
           800: "rgb(var(--wf-gold-800) / <alpha-value>)",
           900: "rgb(var(--wf-gold-900) / <alpha-value>)",
         },
-        paper: "#F7F5F2",
-        ink: "#22263A",
-        line: "#E8E4DD",
+        paper: "rgb(var(--wf-paper) / <alpha-value>)",
+        ink: "rgb(var(--wf-ink) / <alpha-value>)",
+        line: "rgb(var(--wf-line) / <alpha-value>)",
+        surface: "rgb(var(--wf-surface) / <alpha-value>)",
+        accent: {
+          DEFAULT: "#a30601",
+          dark: "#b81a13",
+        },
       },
       fontFamily: {
         sans: [

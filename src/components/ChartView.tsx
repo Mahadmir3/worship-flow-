@@ -24,7 +24,7 @@ export function ChartView({ chart, sourceKey }: { chart: string; sourceKey: stri
           <button
             type="button"
             aria-label="Transpose down"
-            className="rounded-lg border border-line bg-white p-1.5 text-ink/60 hover:border-brand-400"
+            className="rounded-lg border border-line bg-surface p-1.5 text-ink/60 hover:border-brand-400"
             onClick={() => {
               const idx = KEYS.indexOf(targetKey);
               setTargetKey(KEYS[(idx + 11) % 12]);
@@ -36,7 +36,7 @@ export function ChartView({ chart, sourceKey }: { chart: string; sourceKey: stri
             value={targetKey}
             onChange={(e) => setTargetKey(e.target.value)}
             aria-label="Select key"
-            className="rounded-lg border border-line bg-white px-2.5 py-1.5 text-sm font-bold text-ink outline-none focus:border-brand-400"
+            className="rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm font-bold text-ink outline-none focus:border-brand-400"
           >
             {KEYS.map((k) => (
               <option key={k} value={k}>{prettyKey(k)}</option>
@@ -45,7 +45,7 @@ export function ChartView({ chart, sourceKey }: { chart: string; sourceKey: stri
           <button
             type="button"
             aria-label="Transpose up"
-            className="rounded-lg border border-line bg-white p-1.5 text-ink/60 hover:border-brand-400"
+            className="rounded-lg border border-line bg-surface p-1.5 text-ink/60 hover:border-brand-400"
             onClick={() => {
               const idx = KEYS.indexOf(targetKey);
               setTargetKey(KEYS[(idx + 1) % 12]);

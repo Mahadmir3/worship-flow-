@@ -254,7 +254,7 @@ function SortableRow({
       {expanded && (
         <div className="border-t border-line/70 bg-paper/40 px-5 py-4">
           {item.notes ? (
-            <p className="mb-3 rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink/75">{item.notes}</p>
+            <p className="mb-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink/75">{item.notes}</p>
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
             {item.songId && (

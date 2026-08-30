@@ -120,7 +120,7 @@ export function MusicPlayer({
           value={speed}
           onChange={(e) => setSpeedCmd(Number(e.target.value))}
           aria-label="Playback speed"
-          className="rounded-lg border border-line bg-white px-2 py-1.5 text-xs font-semibold text-ink/70"
+          className="rounded-lg border border-line bg-surface px-2 py-1.5 text-xs font-semibold text-ink/70"
         >
           {[0.5, 0.75, 1, 1.25, 1.5].map((s) => (
             <option key={s} value={s}>{s}×</option>
@@ -130,26 +130,26 @@ export function MusicPlayer({
           type="button"
           onClick={() => setLoop((l) => !l)}
           aria-pressed={loop}
-          className={`chip border-line ${loop ? "bg-brand-700 text-white" : "bg-white text-ink/60"}`}
+          className={`chip border-line ${loop ? "bg-brand-700 text-white" : "bg-surface text-ink/60"}`}
         >
           <Repeat className="h-3.5 w-3.5" /> Loop
         </button>
         <button
           type="button"
           onClick={() => setAb((s) => ({ ...s, a: audioRef.current?.currentTime ?? 0 }))}
-          className={`chip border-line ${ab.a !== null ? "bg-gold-500 text-white" : "bg-white text-ink/60"}`}
+          className={`chip border-line ${ab.a !== null ? "bg-gold-500 text-white" : "bg-surface text-ink/60"}`}
         >
           Set A {ab.a !== null && `(${fmtSec(ab.a)})`}
         </button>
         <button
           type="button"
           onClick={() => setAb((s) => ({ ...s, b: audioRef.current?.currentTime ?? 0 }))}
-          className={`chip border-line ${ab.b !== null ? "bg-gold-500 text-white" : "bg-white text-ink/60"}`}
+          className={`chip border-line ${ab.b !== null ? "bg-gold-500 text-white" : "bg-surface text-ink/60"}`}
         >
           Set B {ab.b !== null && `(${fmtSec(ab.b)})`}
         </button>
         {(ab.a !== null || ab.b !== null) && (
-          <button type="button" onClick={() => setAb({ a: null, b: null })} className="chip border-line bg-white text-ink/60">
+          <button type="button" onClick={() => setAb({ a: null, b: null })} className="chip border-line bg-surface text-ink/60">
             <RotateCcw className="h-3.5 w-3.5" /> Clear A/B
           </button>
         )}
