@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { PrismaClient } from "@prisma/client";
 
 /**
@@ -5,25 +6,37 @@ import { PrismaClient } from "@prisma/client";
  *  - PostgreSQL (Supabase) in production / Cloudflare → PrismaPg driver adapter
  *    (no native engine; runs on Workers via nodejs_compat TCP).
  *  - SQLite for the local demo preview (plain engine client).
- * The DATABASE_URL protocol decides. Constructing the Postgres client is async
- * (dynamic adapter import), so the exported `prisma` is a chainable lazy proxy:
- * any property path + call resolves through the client promise, e.g.
- * `await prisma.user.findUnique(...)` works unchanged everywhere.
+ *
+ * Workers caveat (learned the hard way): sockets do not survive isolate
+ * suspension, so a pooled connection reused across requests hangs forever.
+ * Per the OpenNext Cloudflare docs we therefore use `maxUses: 1` (one fresh
+ * connection per query) and a per-request client (React cache()) — never a
+ * global one. The exported `prisma` stays a chainable lazy proxy so call
+ * sites are unchanged in both runtimes.
  */
 
-const globalForPrisma = globalThis as unknown as { prisma?: Promise<PrismaClient> };
-
-function clientPromise(): Promise<PrismaClient> {
-  if (!globalForPrisma.prisma) {
+function createClient(): Promise<PrismaClient> {
+  return (async () => {
     const url = process.env.DATABASE_URL || "";
-    globalForPrisma.prisma = (async () => {
-      if (url.startsWith("postgres")) {
-        const { PrismaPg } = await import("@prisma/adapter-pg");
-        return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }), log: ["error", "warn"] });
-      }
-      return new PrismaClient({ log: ["error", "warn"] });
-    })();
-  }
+    if (url.startsWith("postgres")) {
+      const { PrismaPg } = await import("@prisma/adapter-pg");
+      return new PrismaClient({
+        adapter: new PrismaPg({ connectionString: url, maxUses: 1 }),
+        log: ["error", "warn"],
+      });
+    }
+    return new PrismaClient({ log: ["error", "warn"] });
+  })();
+}
+
+// Per-request singleton (React cache): repeated calls in the same render/action
+// share one client, but nothing is reused across requests.
+export const getPrisma = cache(createClient);
+
+// Preview-only convenience: a stable client for the SQLite demo/seed scripts.
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+export function getLocalPrisma(): PrismaClient {
+  if (!globalForPrisma.prisma) globalForPrisma.prisma = new PrismaClient();
   return globalForPrisma.prisma;
 }
 
@@ -36,7 +49,7 @@ function lazyProxy(path: string[] = []): any {
       return lazyProxy([...path, prop]);
     },
     apply(_t, _thisArg, args) {
-      return clientPromise().then((client) => {
+      return getPrisma().then((client) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let value: any = client;
         for (const key of path) value = value?.[key];
@@ -47,8 +60,3 @@ function lazyProxy(path: string[] = []): any {
 }
 
 export const prisma: PrismaClient = lazyProxy() as PrismaClient;
-
-/** Direct access to the real client when needed (scripts, transactions). */
-export function getPrisma(): Promise<PrismaClient> {
-  return clientPromise();
-}
