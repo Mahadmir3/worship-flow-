@@ -32,6 +32,7 @@ import { Avatar, Badge, Card, CardHeader, EmptyState, LinkButton, SectionTitle, 
 import { Modal } from "@/components/ui/Modal";
 import { createSong } from "@/actions/songs";
 import { respondToAssignment, submitServingProposal } from "@/actions/scheduling";
+import { SubmitButton } from "@/components/SubmitButton";
 import { createTeam } from "@/actions/teams";
 import { createRehearsal } from "@/actions/rehearsals";
 import { KEYS } from "@/lib/music";
@@ -209,7 +210,7 @@ export default async function DashboardPage() {
                           <form action={respondToAssignment}>
                             <input type="hidden" name="assignmentId" value={a.id} />
                             <input type="hidden" name="action" value="accept" />
-                            <button className="btn-secondary btn-sm border-emerald-200 text-emerald-700">Accept</button>
+                            <SubmitButton pendingText="Accepting…" className="btn-secondary btn-sm border-emerald-200 text-emerald-700">Accept</SubmitButton>
                           </form>
                           <Modal
                             title="Why are you declining?"
@@ -231,7 +232,7 @@ export default async function DashboardPage() {
                                 />
                               </div>
                               <p className="text-xs leading-relaxed text-ink/50">Your reason is shared with the team leaders so they can find a replacement.</p>
-                              <button className="btn w-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">Send decline with reason</button>
+                              <SubmitButton pendingText="Sending…" className="btn w-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">Send decline with reason</SubmitButton>
                             </form>
                           </Modal>
                         </span>

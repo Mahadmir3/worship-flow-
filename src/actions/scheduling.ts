@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { canAny, canDo, canManageTeam, isAdminTier } from "@/lib/perms";
@@ -124,18 +125,7 @@ export async function unassign(fd: FormData) {
 /** Volunteer responds: accept / decline / request replacement. */
 export async function respondToAssignment(fd: FormData) {
   const user = await requireUser();
-  const a = await prisma.assignment.findFirst({
-    where: { id: s(fd, "assignmentId"), service: { organizationId: user.organizationId } },
-    include: { service: { include: { type: true } }, team: true, person: true },
-  });
-  if (!a) throw new Error("Assignment not found");
-  if (!a.personId) throw new Error("Nobody is assigned to this position yet");
-  // Your own request — or an owner/administrator/department leader responding on someone's behalf.
-  const onBehalf = a.personId !== user.personId;
-  if (onBehalf && !(await isAdminTier(user)) && !(await canManageTeam(user, a.teamId)))
-    throw new Error("Not allowed");
   const action = s(fd, "action");
-  const note = s(fd, "note") || null;
   const statusMap: Record<string, string> = {
     accept: "ACCEPTED",
     decline: "DECLINED",
@@ -144,34 +134,75 @@ export async function respondToAssignment(fd: FormData) {
   const status = statusMap[action];
   if (!status) return;
 
+  // Single query — only what the update + messages need.
+  const a = await prisma.assignment.findFirst({
+    where: { id: s(fd, "assignmentId"), service: { organizationId: user.organizationId } },
+    select: {
+      id: true, personId: true, positionName: true, serviceId: true, teamId: true,
+      service: { select: { title: true, date: true, startTime: true } },
+      person: { select: { name: true } },
+    },
+  });
+  if (!a) throw new Error("Assignment not found");
+  if (!a.personId) throw new Error("Nobody is assigned to this position yet");
+
+  // Permission check only when responding on someone else's behalf —
+  // the common case (your own request) needs no extra queries.
+  const onBehalf = a.personId !== user.personId;
+  if (onBehalf && !(await isAdminTier(user)) && !(await canManageTeam(user, a.teamId))) {
+    throw new Error("Not allowed");
+  }
+
+  const note = s(fd, "note") || null;
   await prisma.assignment.update({ where: { id: a.id }, data: { status, respondedAt: new Date(), note } });
 
-  const titleMap: Record<string, string> = {
-    ACCEPTED: `${a.person!.name} accepted — ${a.positionName}`,
-    DECLINED: `${a.person!.name} declined — ${a.positionName}`,
-    REPLACEMENT_REQUESTED: `${a.person!.name} requested a replacement — ${a.positionName}`,
-  };
-  await notifyTeamLeaders(a.teamId, user.organizationId, {
-    title: onBehalf && a.person ? `${user.name} → ${titleMap[status]}` : titleMap[status],
-    body: `${a.service.title} · ${a.service.date}${note ? ` — “${note}”` : ""}`,
-    kind: status === "ACCEPTED" ? "SUCCESS" : "WARNING",
-    link: `/services/${a.serviceId}?tab=team`,
-  });
-  if (onBehalf && a.person) {
-    const pu = await prisma.user.findFirst({ where: { personId: a.personId }, select: { id: true } });
-    if (pu) {
-      const verb = status === "ACCEPTED" ? "accepted" : status === "DECLINED" ? "declined" : "requested a replacement";
-      await notifyUser(pu.id, user.organizationId, {
-        title: `${user.name} ${verb} for you — ${a.positionName}`,
-        body: `${a.service.title} · ${a.service.date}`,
-        kind: status === "ACCEPTED" ? "SUCCESS" : "WARNING",
-        link: `/services/${a.serviceId}?tab=team`,
+  // Notifications + audit are not needed for the response — run them after
+  // the user already sees the result.
+  after(async () => {
+    try {
+      const titleMap: Record<string, string> = {
+        ACCEPTED: `${a.person.name} accepted — ${a.positionName}`,
+        DECLINED: `${a.person.name} declined — ${a.positionName}`,
+        REPLACEMENT_REQUESTED: `${a.person.name} requested a replacement — ${a.positionName}`,
+      };
+      const title = onBehalf ? `${user.name} → ${titleMap[status]}` : titleMap[status];
+      const body = `${a.service.title} · ${a.service.date}${note ? ` — “${note}”` : ""}`;
+      const link = `/services/${a.serviceId}?tab=team`;
+
+      // team leaders (batched into ONE insert)
+      const leaders = await prisma.teamMember.findMany({
+        where: { teamId: a.teamId, isLeader: true },
+        select: { person: { select: { user: { select: { id: true } } } } },
       });
+      const rows = leaders
+        .map((l) => l.person.user?.id)
+        .filter((id): id is string => !!id)
+        .map((userId) => ({
+          userId, organizationId: user.organizationId, title, body,
+          kind: status === "ACCEPTED" ? "SUCCESS" : "WARNING", link,
+        }));
+      // the affected volunteer, when a leader responded for them
+      if (onBehalf) {
+        const pu = await prisma.user.findFirst({ where: { personId: a.personId }, select: { id: true } });
+        if (pu) {
+          const verb = status === "ACCEPTED" ? "accepted" : status === "DECLINED" ? "declined" : "requested a replacement";
+          rows.push({
+            userId: pu.id, organizationId: user.organizationId,
+            title: `${user.name} ${verb} for you — ${a.positionName}`,
+            body: `${a.service.title} · ${a.service.date}`,
+            kind: status === "ACCEPTED" ? "SUCCESS" : "WARNING", link,
+          });
+        }
+      }
+      if (rows.length) await prisma.notification.createMany({ data: rows });
+      await audit(user.organizationId, user.id, `assignment.${action}`, "Assignment", a.id);
+    } catch (e) {
+      console.error("[respondToAssignment] after():", e);
     }
-  }
-  await audit(user.organizationId, user.id, `assignment.${action}`, "Assignment", a.id);
-  revalidatePath("/schedule");
-  revalidatePath("/dashboard");
+  });
+
+  // The page the form lives on re-renders as part of the action response —
+  // no need to eagerly revalidate every other route too.
   revalidatePath(`/services/${a.serviceId}`);
 }
 

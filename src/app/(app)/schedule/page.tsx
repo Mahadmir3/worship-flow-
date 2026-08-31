@@ -18,6 +18,7 @@ import { fmtDate, fmtDurationRange, relativeDay, todayIn, weekdayOf } from "@/li
 import { Avatar, Badge, Card, CardHeader, EmptyState, SectionTitle } from "@/components/ui/primitives";
 import { Modal } from "@/components/ui/Modal";
 import { respondToAssignment } from "@/actions/scheduling";
+import { SubmitButton } from "@/components/SubmitButton";
 import { addBlockout, removeBlockout, setPreferredFrequency } from "@/actions/teams";
 
 export const metadata = { title: "My schedule" };
@@ -95,16 +96,16 @@ export default async function SchedulePage() {
                   <form action={respondToAssignment}>
                     <input type="hidden" name="assignmentId" value={a.id} />
                     <input type="hidden" name="action" value="accept" />
-                    <button className="btn bg-emerald-600 text-white hover:bg-emerald-700 btn-sm">
+                    <SubmitButton pendingText="Accepting…" className="btn bg-emerald-600 text-white hover:bg-emerald-700 btn-sm">
                       <Check className="h-4 w-4" /> Accept
-                    </button>
+                    </SubmitButton>
                   </form>
                   <form action={respondToAssignment}>
                     <input type="hidden" name="assignmentId" value={a.id} />
                     <input type="hidden" name="action" value="decline" />
-                    <button className="btn btn-sm border border-rose-200 bg-surface text-rose-600 hover:bg-rose-50">
+                    <SubmitButton pendingText="Declining…" className="btn btn-sm border border-rose-200 bg-surface text-rose-600 hover:bg-rose-50">
                       <X className="h-4 w-4" /> Decline
-                    </button>
+                    </SubmitButton>
                   </form>
                   <Modal
                     title="Request a replacement"

@@ -36,6 +36,7 @@ import {
   setServiceStatus,
 } from "@/actions/services";
 import { addServicePosition, autoSchedule, confirmAll, deleteAssignment, respondToAssignment, schedulePerson, unassign } from "@/actions/scheduling";
+import { SubmitButton } from "@/components/SubmitButton";
 import { createTask, moveTask } from "@/actions/tasks";
 import { TASK_PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { Badge as B } from "@/components/ui/primitives";
@@ -79,13 +80,18 @@ export default async function ServiceDetailPage({
 
   const today = todayIn(user.organization.timezone);
   const tab = searchParams.tab || "overview";
-  const editable = await canDo2(user, "manage_services");
-  const canSchedule = await canAny(user, ["schedule", "manage_services"]);
-  const ledIds = new Set((await ledTeams(user)).map((t) => t.id));  const people = await prisma.person.findMany({
-    where: { organizationId: user.organizationId },
-    orderBy: { name: "asc" },
-    include: { teamMemberships: { select: { teamId: true } } },
-  });
+  // All independent lookups in PARALLEL — halves the sequential round-trips.
+  const [editable, canSchedule, ledTeamsList, people] = await Promise.all([
+    canDo2(user, "manage_services"),
+    canAny(user, ["schedule", "manage_services"]),
+    ledTeams(user),
+    prisma.person.findMany({
+      where: { organizationId: user.organizationId },
+      orderBy: { name: "asc" },
+      include: { teamMemberships: { select: { teamId: true } } },
+    }),
+  ]);
+  const ledIds = new Set(ledTeamsList.map((t) => t.id));
 
   // Smart suggestions for open/declined/replacement positions
   const { suggestions, warnings } = canSchedule
@@ -442,13 +448,13 @@ export default async function ServiceDetailPage({
                                 <form action={respondToAssignment}>
                                   <input type="hidden" name="assignmentId" value={a.id} />
                                   <input type="hidden" name="action" value="accept" />
-                                  <button className="btn-secondary btn-sm border-emerald-200 text-emerald-700">Accept</button>
+                                  <SubmitButton pendingText="Accepting…" className="btn-secondary btn-sm border-emerald-200 text-emerald-700">Accept</SubmitButton>
                                 </form>
                                 {mine ? (
                                   <Modal
                                     title="Why are you declining?"
                                     subtitle={`${a.positionName} · ${a.team.name}`}
-                                    trigger={<button className="btn-ghost btn-sm text-ink/40">Decline</button>}
+                                    trigger={<SubmitButton pendingText="…" className="btn-ghost btn-sm text-ink/40">Decline</SubmitButton>}
                                   >
                                     <form action={respondToAssignment} className="space-y-4">
                                       <input type="hidden" name="assignmentId" value={a.id} />
@@ -465,14 +471,14 @@ export default async function ServiceDetailPage({
                                         />
                                       </div>
                                       <p className="text-xs leading-relaxed text-ink/50">Your reason is shared with the team leaders so they can find a replacement.</p>
-                                      <button className="btn w-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">Send decline with reason</button>
+                                      <SubmitButton pendingText="Sending…" className="btn w-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">Send decline with reason</SubmitButton>
                                     </form>
                                   </Modal>
                                 ) : (
                                   <form action={respondToAssignment}>
                                     <input type="hidden" name="assignmentId" value={a.id} />
                                     <input type="hidden" name="action" value="decline" />
-                                    <button className="btn-ghost btn-sm text-ink/40">Decline</button>
+                                    <SubmitButton pendingText="…" className="btn-ghost btn-sm text-ink/40">Decline</SubmitButton>
                                   </form>
                                 )}
                               </span>

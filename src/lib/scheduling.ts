@@ -38,66 +38,80 @@ export async function buildSuggestions(
   organizationId: string,
   onlyOpen = true
 ): Promise<{ suggestions: PositionSuggestion[]; warnings: ServiceWarnings }> {
-  const service = await prisma.service.findFirst({
-    where: { id: serviceId, organizationId },
-    include: { campus: true, type: true },
-  });
+  const since = new Date(Date.now() - 60 * 864e5);
+
+  // Round 1 — everything independent, fetched in PARALLEL.
+  const [service, assignments, recent, people] = await Promise.all([
+    prisma.service.findFirst({
+      where: { id: serviceId, organizationId },
+      include: { campus: true, type: true },
+    }),
+    prisma.assignment.findMany({
+      where: onlyOpen
+        ? { serviceId, status: { in: ["OPEN", "DECLINED", "REPLACEMENT_REQUESTED"] } }
+        : { serviceId },
+      include: { team: true, person: true },
+      orderBy: [{ team: { name: "asc" } }, { positionName: "asc" }],
+    }),
+    prisma.assignment.findMany({
+      where: {
+        status: { in: ["ACCEPTED", "CONFIRMED", "PENDING"] },
+        personId: { not: null },
+        createdAt: { gte: since },
+        service: { organizationId },
+      },
+      select: { personId: true, serviceId: true },
+    }),
+    prisma.person.findMany({
+      where: { organizationId },
+      include: {
+        teamMemberships: true,
+        blockouts: true,
+      },
+    }),
+  ]);
   if (!service) return { suggestions: [], warnings: [] };
-
-  const assignments = await prisma.assignment.findMany({
-    where: onlyOpen
-      ? { serviceId, status: { in: ["OPEN", "DECLINED", "REPLACEMENT_REQUESTED"] } }
-      : { serviceId },
-    include: { team: true, person: true },
-    orderBy: [{ team: { name: "asc" } }, { positionName: "asc" }],
-  });
-
   if (!assignments.length) return { suggestions: [], warnings: [] };
 
   const serviceDate = service.date;
 
-  // Everything already scheduled on this date across the org (for conflicts).
-  const sameDay = await prisma.assignment.findMany({
-    where: {
-      status: { in: ["PENDING", "ACCEPTED", "CONFIRMED"] },
-      personId: { not: null },
-      service: { date: serviceDate, organizationId },
-    },
-    include: { service: { include: { type: true, campus: true } }, person: true },
-  });
-
-  const since = new Date(Date.now() - 60 * 864e5);
-  const recent = await prisma.assignment.findMany({
-    where: {
-      status: { in: ["ACCEPTED", "CONFIRMED", "PENDING"] },
-      personId: { not: null },
-      createdAt: { gte: since },
-      service: { organizationId },
-    },
-    select: { personId: true, serviceId: true },
-  });
   const recentCount = new Map<string, number>();
   for (const r of recent) {
     if (r.personId) recentCount.set(r.personId, (recentCount.get(r.personId) || 0) + 1);
   }
-
-  const people = await prisma.person.findMany({
-    where: { organizationId },
-    include: {
-      teamMemberships: true,
-      blockouts: true,
-    },
-  });
   const personById = new Map(people.map((p) => [p.id, p]));
+
+  // Round 2 — the two fetches that depend on round 1, in PARALLEL.
+  // sameDay needs the service date; membersByTeam replaces the old N+1 loop
+  // (one query per position) with ONE query for all teams.
+  const teamIds = [...new Set(assignments.map((a) => a.teamId))];
+
+  const [sameDay, allMembers] = await Promise.all([
+    prisma.assignment.findMany({
+      where: {
+        status: { in: ["PENDING", "ACCEPTED", "CONFIRMED"] },
+        personId: { not: null },
+        service: { date: service.date, organizationId },
+      },
+      include: { service: { include: { type: true, campus: true } }, person: true },
+    }),
+    prisma.teamMember.findMany({
+      where: { teamId: { in: teamIds }, status: "ACTIVE" },
+      include: { person: { include: { blockouts: true } } },
+    }),
+  ]);
+  const membersByTeam = new Map<string, typeof allMembers>();
+  for (const m of allMembers) {
+    const arr = membersByTeam.get(m.teamId) || [];
+    arr.push(m);
+    membersByTeam.set(m.teamId, arr);
+  }
 
   const suggestions: PositionSuggestion[] = [];
   const warnings: ServiceWarnings = [];
 
   for (const a of assignments) {
-    const members = await prisma.teamMember.findMany({
-      where: { teamId: a.teamId, status: "ACTIVE" },
-      include: { person: { include: { blockouts: true } } },
-    });
+    const members = membersByTeam.get(a.teamId) || [];
 
     const candidates: Candidate[] = [];
 
