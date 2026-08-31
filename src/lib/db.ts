@@ -21,17 +21,20 @@ import { PrismaClient } from "@prisma/client";
 
 function createClient(): Promise<PrismaClient> {
   return (async () => {
-    const url = process.env.DATABASE_URL || "";
+    let url = process.env.DATABASE_URL || "";
+    // Prefer Hyperdrive when available (production on Cloudflare): it keeps
+    // warm pooled connections to the database so requests skip the slow
+    // TLS+auth handshake to Europe on every query.
+    try {
+      const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+      const { env } = await getCloudflareContext({ async: true });
+      const cs = (env as { HYPERDRIVE?: { connectionString?: string } })?.HYPERDRIVE?.connectionString;
+      if (cs) url = cs;
+    } catch {
+      // not on Cloudflare (local dev/preview) — fall back to DATABASE_URL
+    }
     if (url.startsWith("postgres")) {
       const { PrismaPg } = await import("@prisma/adapter-pg");
-      // Pool tuning via PrismaPg's config (it wires TLS correctly for workerd —
-      // do NOT pass a hand-built Pool with an ssl object):
-      //  - max 10: queries within one request run in PARALLEL (a Promise.all
-      //    of 12 queries needs more than one wire, otherwise they queue
-      //    single-file and the page crawls)
-      //  - idleTimeoutMillis: sockets close seconds after the request ends,
-      //    so nothing lingers to die silently across isolate suspensions
-      //  - connectionTimeoutMillis: fast error instead of an infinite hang
       return new PrismaClient({
         adapter: new PrismaPg({
           connectionString: url,

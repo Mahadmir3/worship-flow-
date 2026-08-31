@@ -10,6 +10,13 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "6f551fb96a4b4a47a34a86045418fec5",
+      "localConnectionString": "postgresql://postgres.vmyondexswqbldxtsokj:M%40H%40adm!r21@aws-1-eu-west-1.pooler.supabase.com:6543/postgres"
+    }
+  ],
   "vars": {
     "NODE_ENV": "production"
   }
