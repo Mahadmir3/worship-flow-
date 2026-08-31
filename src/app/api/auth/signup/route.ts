@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     { name: "Production", purpose: "Sound, lighting, media" },
   ]) {
     await prisma.channel.create({
-      data: { organizationId: org.id, name: c.name, slug: `${c.name.toLowerCase().replace(/\s+/g, "-")}-${org.id.slice(0, 6)}`, purpose: c.purpose },
+      data: { organizationId: org.id, name: c.name, slug: `${c.name.toLowerCase().replace(/\s+/g, "-")}-${org.id}`, purpose: c.purpose },
     });
   }
 
