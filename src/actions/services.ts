@@ -118,7 +118,7 @@ export async function setServiceStatus(fd: FormData) {
 }
 
 export async function deleteService(fd: FormData) {
-  const id = s(fd, "serviceId");
+  const id = s(fd, "serviceId") || s(fd, "id");
   const { user } = await requireServiceEditor(id);
   await prisma.service.delete({ where: { id } });
   await audit(user.organizationId, user.id, "service.delete", "Service", id);

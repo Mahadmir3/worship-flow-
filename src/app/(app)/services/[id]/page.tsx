@@ -37,6 +37,7 @@ import {
 } from "@/actions/services";
 import { addServicePosition, autoSchedule, confirmAll, deleteAssignment, respondToAssignment, schedulePerson, unassign } from "@/actions/scheduling";
 import { SubmitButton } from "@/components/SubmitButton";
+import { ModalForm } from "@/components/ModalForm";
 import { createTask, moveTask } from "@/actions/tasks";
 import { TASK_PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { Badge as B } from "@/components/ui/primitives";
@@ -456,7 +457,7 @@ export default async function ServiceDetailPage({
                                     subtitle={`${a.positionName} · ${a.team.name}`}
                                     trigger={<SubmitButton pendingText="…" className="btn-ghost btn-sm text-ink/40">Decline</SubmitButton>}
                                   >
-                                    <form action={respondToAssignment} className="space-y-4">
+                                    <ModalForm action={respondToAssignment} className="space-y-4">
                                       <input type="hidden" name="assignmentId" value={a.id} />
                                       <input type="hidden" name="action" value="decline" />
                                       <div>
@@ -472,7 +473,7 @@ export default async function ServiceDetailPage({
                                       </div>
                                       <p className="text-xs leading-relaxed text-ink/50">Your reason is shared with the team leaders so they can find a replacement.</p>
                                       <SubmitButton pendingText="Sending…" className="btn w-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">Send decline with reason</SubmitButton>
-                                    </form>
+                                    </ModalForm>
                                   </Modal>
                                 ) : (
                                   <form action={respondToAssignment}>
@@ -511,11 +512,11 @@ export default async function ServiceDetailPage({
                                       {person.id === a.personId ? (
                                         <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">current</Badge>
                                       ) : (
-                                        <form action={schedulePerson}>
+                                        <ModalForm action={schedulePerson}>
                                           <input type="hidden" name="assignmentId" value={a.id} />
                                           <input type="hidden" name="personId" value={person.id} />
                                           <button className="btn-primary btn-sm">Request</button>
-                                        </form>
+                                        </ModalForm>
                                       )}
                                     </li>
                                   ))}
@@ -528,7 +529,7 @@ export default async function ServiceDetailPage({
                                 title={`Change — ${a.positionName}`}                                subtitle={`Currently ${a.person?.name}. Pick someone else and they'll get a new request.`}
                                 trigger={<button className="btn-secondary btn-sm">Change</button>}
                               >
-                                <form action={schedulePerson} className="space-y-4">
+                                <ModalForm action={schedulePerson} className="space-y-4">
                                   <input type="hidden" name="assignmentId" value={a.id} />
                                   <div>
                                     <label className="label" htmlFor={`chg-${a.id}`}>Who takes over?</label>
@@ -552,7 +553,7 @@ export default async function ServiceDetailPage({
                                     The new person receives a request notification. {a.person?.name}&apos;s current request is replaced automatically.
                                   </p>
                                   <button className="btn-primary w-full">Send new request</button>
-                                </form>
+                                </ModalForm>
                               </Modal>
                             )}
                             {canSchedule && a.personId && (

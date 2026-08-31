@@ -43,9 +43,21 @@ export function Modal({
 
   return (
     <>
-      <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className="contents">
+      <span
+        role="button"
+        tabIndex={0}
+        aria-haspopup="dialog"
+        onClick={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+        className="contents"
+      >
         {trigger}
-      </button>
+      </span>
       {open && (
         <div
           className="fixed inset-0 z-[90] flex items-end justify-center bg-ink/40 p-0 backdrop-blur-sm sm:items-center sm:p-6"

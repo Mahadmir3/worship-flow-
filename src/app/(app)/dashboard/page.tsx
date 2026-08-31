@@ -33,6 +33,7 @@ import { Modal } from "@/components/ui/Modal";
 import { createSong } from "@/actions/songs";
 import { respondToAssignment, submitServingProposal } from "@/actions/scheduling";
 import { SubmitButton } from "@/components/SubmitButton";
+import { ModalForm } from "@/components/ModalForm";
 import { createTeam } from "@/actions/teams";
 import { createRehearsal } from "@/actions/rehearsals";
 import { KEYS } from "@/lib/music";
@@ -217,7 +218,7 @@ export default async function DashboardPage() {
                             subtitle={`${a.service.title} — ${a.positionName}`}
                             trigger={<button className="btn-ghost btn-sm text-ink/40">Decline</button>}
                           >
-                            <form action={respondToAssignment} className="space-y-4">
+                            <ModalForm action={respondToAssignment} className="space-y-4">
                               <input type="hidden" name="assignmentId" value={a.id} />
                               <input type="hidden" name="action" value="decline" />
                               <div>
@@ -233,7 +234,7 @@ export default async function DashboardPage() {
                               </div>
                               <p className="text-xs leading-relaxed text-ink/50">Your reason is shared with the team leaders so they can find a replacement.</p>
                               <SubmitButton pendingText="Sending…" className="btn w-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100">Send decline with reason</SubmitButton>
-                            </form>
+                            </ModalForm>
                           </Modal>
                         </span>
                       )}

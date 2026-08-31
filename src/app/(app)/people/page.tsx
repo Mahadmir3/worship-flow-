@@ -7,7 +7,10 @@ import { todayIn } from "@/lib/format";
 import { getCampusFilter } from "@/actions/settings";
 import { Avatar, Badge, EmptyState } from "@/components/ui/primitives";
 import { Modal } from "@/components/ui/Modal";
-import { createPerson } from "@/actions/teams";
+import { createPerson, deletePerson } from "@/actions/teams";
+import { isAdminTier } from "@/lib/perms";
+import { ModalForm } from "@/components/ModalForm";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
 import { ROLE_LABEL } from "@/lib/constants";
 
 export const metadata = { title: "People" };
@@ -44,6 +47,7 @@ export default async function PeoplePage({
 
   const roleByPerson = new Map(users.map((u) => [u.personId, ROLE_LABEL[u.role] || u.role]));
   const managePeople = await canDo(user, "manage_people");
+  const isAdmin = isAdminTier(user);
 
   return (
     <div className="space-y-6">
@@ -59,7 +63,8 @@ export default async function PeoplePage({
             wide
             trigger={<button className="btn-primary"><UserPlus className="h-4 w-4" /> Add person</button>}
           >
-            <form action={createPerson} className="space-y-4">
+            <ModalForm action={createPerson} className="space-y-4">
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="label" htmlFor="pe-name">Full name</label>
@@ -100,7 +105,14 @@ export default async function PeoplePage({
                 </div>
               </div>
               <button className="btn-primary w-full">Add person</button>
-            </form>
+<div className="rounded-xl border border-line bg-paper p-3">
+<label className="flex items-center gap-2 text-sm font-medium text-ink">
+<input type="checkbox" name="createLogin" className="h-4 w-4" />
+Create their login now
+</label>
+<p className="mt-1 text-xs text-ink/50">Generates a temporary password you can share — they change it after first login. (Needs an email above.)</p>
+</div>
+</ModalForm>
           </Modal>
         )}
       </div>
@@ -126,7 +138,9 @@ export default async function PeoplePage({
       ) : (
         <div className="card divide-y divide-line/70 overflow-hidden">
           {people.map((p) => (
-            <Link key={p.id} href={`/people/${p.id}`} className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition hover:bg-brand-50/50">
+            <SwipeToDelete
+              key={p.id} action={deletePerson} id={p.id} confirmLabel={p.name} enabled={isAdmin}>
+            <Link href={`/people/${p.id}`} className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition hover:bg-brand-50/50">
               <Avatar name={p.name} size={40} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-ink">{p.name}</p>
@@ -152,6 +166,7 @@ export default async function PeoplePage({
                 <Badge className="hidden border-gold-200 bg-gold-50 text-gold-700 md:inline-flex">{roleByPerson.get(p.id)}</Badge>
               )}
             </Link>
+            </SwipeToDelete>
           ))}
         </div>
       )}

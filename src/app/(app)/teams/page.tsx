@@ -8,7 +8,10 @@ import { todayIn } from "@/lib/format";
 import { getCampusFilter } from "@/actions/settings";
 import { Badge, EmptyState } from "@/components/ui/primitives";
 import { Modal } from "@/components/ui/Modal";
-import { createTeam } from "@/actions/teams";
+import { createTeam, deleteTeam } from "@/actions/teams";
+import { isAdminTier } from "@/lib/perms";
+import { ModalForm } from "@/components/ModalForm";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
 
 export const metadata = { title: "Teams" };
 
@@ -16,6 +19,7 @@ export default async function TeamsPage() {
   const user = await requireUser();
   const today = todayIn(user.organization.timezone);
   const campusFilter = await getCampusFilter();
+  const isAdmin = isAdminTier(user);
 
   const [teams, people, upcomingAssignments] = await Promise.all([
     prisma.team.findMany({
@@ -58,7 +62,7 @@ export default async function TeamsPage() {
             subtitle="Positions become the roles you schedule people into."
             trigger={<button className="btn-primary"><Plus className="h-4 w-4" /> New team</button>}
           >
-            <form action={createTeam} className="space-y-4">
+            <ModalForm action={createTeam} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="label" htmlFor="tm-name">Team name</label>
@@ -91,7 +95,7 @@ export default async function TeamsPage() {
                 <textarea id="tm-desc" name="description" rows={2} className="input" />
               </div>
               <button className="btn-primary w-full">Create team</button>
-            </form>
+            </ModalForm>
           </Modal>
         )}
       </div>
@@ -106,6 +110,8 @@ export default async function TeamsPage() {
             const cat = TEAM_CATEGORY[team.category] || TEAM_CATEGORY.CUSTOM;
             const next = nextByTeam.get(team.id);
             return (
+              <SwipeToDelete
+              key={team.id} action={deleteTeam} id={team.id} confirmLabel={team.name} enabled={isAdmin}>
               <Link
                 key={team.id}
                 href={`/teams/${team.id}`}
@@ -136,6 +142,7 @@ export default async function TeamsPage() {
                   )}
                 </div>
               </Link>
+              </SwipeToDelete>
             );
           })}
         </div>

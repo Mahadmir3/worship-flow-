@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { canDo } from "@/lib/perms";
+import { canDo, isAdminTier } from "@/lib/perms";
 import { audit } from "@/lib/audit";
 
 function s(fd: FormData, key: string, fallback = ""): string {
@@ -111,4 +111,20 @@ export async function deleteArrangement(fd: FormData) {
   if (count <= 1) return; // keep at least one
   await prisma.arrangement.delete({ where: { id } });
   revalidatePath(`/songs/${songId}`);
+}
+
+/** Admin/Owner only: remove a song and its arrangements. */
+export async function deleteSong(fd: FormData) {
+  const user = await requireUser();
+  if (!isAdminTier(user)) throw new Error("Only admins can delete songs");
+  const id = s(fd, "id");
+  const song = await prisma.song.findFirst({ where: { id, organizationId: user.organizationId } });
+  if (!song) return;
+
+  await prisma.arrangement.deleteMany({ where: { songId: id } });
+  await prisma.serviceItem.updateMany({ where: { songId: id }, data: { songId: null } });
+  await prisma.song.delete({ where: { id } });
+
+  await audit(user.organizationId, user.id, "song.delete", "Song", id, { title: song.title });
+  revalidatePath("/songs");
 }

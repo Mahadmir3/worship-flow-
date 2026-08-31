@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Church, Clock, FolderPlus, MapPin, MoveRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { isAdminTier } from "@/lib/perms";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
+import { deleteService } from "@/actions/services";
 import { SERVICE_STATUS } from "@/lib/constants";
 import { fmtDate, fmtDurationRange, todayIn } from "@/lib/format";
 import { getCampusFilter } from "@/actions/settings";
@@ -175,8 +178,8 @@ export default async function ServicesPage({
         </div>
       ) : activeFolder ? (
         <>
-          <ServiceTable title="Upcoming" services={upcoming} folders={folders} canManage={canManage} />
-          {past.length > 0 && <ServiceTable title="Past" services={past.slice(0, 12)} folders={folders} canManage={canManage} />}
+          <ServiceTable title="Upcoming" services={upcoming} folders={folders} canManage={canManage} canDelete={isAdminTier(user)} />
+          {past.length > 0 && <ServiceTable title="Past" services={past.slice(0, 12)} folders={folders} canManage={canManage} canDelete={isAdminTier(user)} />}
         </>
       ) : (
         groups.map((g) => (
@@ -197,7 +200,7 @@ export default async function ServicesPage({
                 </Link>
               )}
             </div>
-            <ServiceTable title="" services={g.items} folders={folders} canManage={canManage} hideTitles />
+            <ServiceTable title="" services={g.items} folders={folders} canManage={canManage} canDelete={isAdminTier(user)} hideTitles />
           </section>
         ))
       )}
@@ -219,12 +222,14 @@ function ServiceTable({
   folders,
   canManage,
   hideTitles,
+  canDelete,
 }: {
   title: string;
   services: any[];
   folders: any[];
   canManage: boolean;
   hideTitles?: boolean;
+  canDelete?: boolean;
 }) {
   const isPast = hideTitles ? false : title === "Past";
   return (
@@ -242,6 +247,7 @@ function ServiceTable({
             key={svc.id}
             className={`flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center ${isPast ? "opacity-70" : ""}`}
           >
+            <SwipeToDelete action={deleteService} id={svc.id} confirmLabel={svc.title} enabled={!!canDelete && !isPast}>
             <Link href={`/services/${svc.id}`} className="flex w-full min-w-0 flex-1 items-center gap-4 sm:w-auto">
               <span
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[10px] font-extrabold uppercase leading-tight text-white"
@@ -258,6 +264,7 @@ function ServiceTable({
                 </p>
               </div>
             </Link>
+            </SwipeToDelete>
             <div className="flex flex-wrap items-center gap-2">
               {svc.folder && (
                 <Badge className="border-line bg-paper text-ink/60">

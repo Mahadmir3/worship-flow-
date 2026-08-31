@@ -6,7 +6,10 @@ import { canDo } from "@/lib/perms";
 import { KEYS } from "@/lib/music";
 import { Badge, EmptyState } from "@/components/ui/primitives";
 import { Modal } from "@/components/ui/Modal";
-import { createSong } from "@/actions/songs";
+import { createSong, deleteSong } from "@/actions/songs";
+import { isAdminTier } from "@/lib/perms";
+import { ModalForm } from "@/components/ModalForm";
+import { SwipeToDelete } from "@/components/SwipeToDelete";
 
 export const metadata = { title: "Songs" };
 
@@ -27,6 +30,7 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
   });
 
   const manage = await canDo(user, "manage_songs");
+  const isAdmin = isAdminTier(user);
 
   return (
     <div className="space-y-6">
@@ -42,7 +46,7 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
             wide
             trigger={<button className="btn-primary"><Plus className="h-4 w-4" /> Add song</button>}
           >
-            <form action={createSong} className="space-y-4">
+            <ModalForm action={createSong} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="label" htmlFor="sg-title">Title</label>
@@ -95,7 +99,7 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
                 <textarea id="sg-lyrics" name="lyrics" rows={4} className="input" />
               </div>
               <button className="btn-primary w-full">Add song</button>
-            </form>
+            </ModalForm>
           </Modal>
         )}
       </div>
@@ -121,7 +125,9 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
               .sort()
               .reverse()[0];
             return (
-              <Link key={s.id} href={`/songs/${s.id}`} className="card flex flex-col gap-3 p-5 transition hover:border-brand-300 hover:shadow-pop">
+              <SwipeToDelete
+              key={s.id} action={deleteSong} id={s.id} confirmLabel={s.title} enabled={isAdmin}>
+              <Link href={`/songs/${s.id}`} className="card flex flex-col gap-3 p-5 transition hover:border-brand-300 hover:shadow-pop">
                 <div className="flex items-start justify-between gap-2">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                     <Music2 className="h-5 w-5" />
@@ -145,6 +151,7 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
                   {uses > 0 ? `Used ${uses}×${lastUsed ? ` · last ${lastUsed}` : ""}` : "Not scheduled yet"}
                 </p>
               </Link>
+              </SwipeToDelete>
             );
           })}
         </div>

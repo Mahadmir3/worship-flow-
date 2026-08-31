@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, Building2, CreditCard, ShieldCheck } from "lucide-react";
+import { Bell, Building2, CreditCard, KeyRound, ShieldCheck } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { canDo } from "@/lib/perms";
 import { ROLE_LABEL } from "@/lib/constants";
@@ -9,6 +9,7 @@ export const metadata = { title: "Settings" };
 const SECTIONS = [
   { href: "/settings/organization", title: "Organization", desc: "Name, campuses, venues, timezone & currency", icon: Building2 },
   { href: "/settings/permissions", title: "Roles & permissions", desc: "Roles, admin-granted rights & what people can add", icon: ShieldCheck },
+  { href: "/settings/security", title: "Sign-in & security", desc: "Change your password", icon: KeyRound },
   { href: "/settings/notifications", title: "Notifications", desc: "Email, SMS and push preferences", icon: Bell },
   { href: "/settings/billing", title: "Billing & payments", desc: "Plan, currencies & mobile money providers", icon: CreditCard },
 ];

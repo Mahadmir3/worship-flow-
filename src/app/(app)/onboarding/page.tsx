@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/primitives";
 import { completeOnboardingStep } from "@/actions/settings";
 import { createService } from "@/actions/services";
 import { createPerson } from "@/actions/teams";
+import { ModalForm } from "@/components/ModalForm";
 import { createSong } from "@/actions/songs";
 
 export const metadata = { title: "Welcome — guided setup" };
@@ -130,7 +131,7 @@ export default async function OnboardingPage() {
 
       {/* Step: people */}
       <StepCard step={5} title="Add your people" icon={<Mic2 className="h-5 w-5" />} done={steps[4].done}>
-        <form action={createPerson} className="grid gap-4 sm:grid-cols-2">
+        <ModalForm action={createPerson} className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="label" htmlFor="ob-pname">Name</label>
             <input id="ob-pname" name="name" required className="input" placeholder="e.g. Sarah Nakato" />
@@ -156,7 +157,7 @@ export default async function OnboardingPage() {
             <button className="btn-secondary">Add person</button>
             <span className="ml-3 text-xs text-ink/45">{org.people.length} added so far</span>
           </div>
-        </form>
+        </ModalForm>
       </StepCard>
 
       {/* Step: songs */}

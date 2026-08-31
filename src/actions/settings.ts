@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireUser, hashPassword, verifyPassword } from "@/lib/auth";
 import { canDo, canManageRoles } from "@/lib/perms";
 import { notifyUser } from "@/lib/notify";
 import { ROLE_LABEL } from "@/lib/constants";
@@ -210,4 +210,21 @@ export async function revokeCapability(fd: FormData) {
   await prisma.permissionGrant.deleteMany({ where: { userId, capability, organizationId: user.organizationId } });
   await audit(user.organizationId, user.id, "grant.delete", "PermissionGrant", userId, { capability });
   revalidatePath("/settings/permissions");
+}
+
+/** Any logged-in user: change your own password (used after first temp login). */
+export async function changeOwnPassword(fd: FormData) {
+  const user = await requireUser();
+  const current = s(fd, "currentPassword");
+  const next = s(fd, "newPassword");
+  const confirm = s(fd, "confirmPassword");
+  if (next.length < 8) throw new Error("New password must be at least 8 characters");
+  if (next !== confirm) throw new Error("The two new passwords don't match");
+
+  const fresh = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!fresh || !verifyPassword(current, fresh.passwordHash)) throw new Error("Current password is incorrect");
+
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: hashPassword(next) } });
+  await audit(user.organizationId, user.id, "auth.password_change", "User", user.id);
+  redirect("/settings/security?changed=1");
 }
