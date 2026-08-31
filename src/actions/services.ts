@@ -55,11 +55,14 @@ export async function createService(fd: FormData) {
     },
   });
 
-  // Optionally seed open positions from the selected teams
-  const seedTeamIds = fd.getAll("seedPositions").filter(Boolean) as string[];
-  if (seedTeamIds.length) {
+  // Optionally seed open positions from the selected teams.
+  // "on" (sent by the onboarding form) means "seed every team".
+  const seedVals = fd.getAll("seedPositions").filter(Boolean) as string[];
+  const seedAll = seedVals.includes("on");
+  const seedTeamIds = seedVals.filter((v) => v !== "on");
+  if (seedAll || seedTeamIds.length) {
     const teams = await prisma.team.findMany({
-      where: { id: { in: seedTeamIds }, organizationId: user.organizationId },
+      where: seedAll ? { organizationId: user.organizationId } : { id: { in: seedTeamIds }, organizationId: user.organizationId },
       include: { positions: true },
     });
     for (const team of teams) {
