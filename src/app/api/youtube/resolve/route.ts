@@ -46,8 +46,22 @@ export async function GET(req: NextRequest) {
         redirect: "follow",
       }
     );
-    const html = await res.text();
-    const m = html.match(/videoId\\?"?:\\?"?([A-Za-z0-9_-]{11})/);
+    // Stream-read and stop as soon as the first videoId appears — the results
+    // page is ~1.3MB and the id sits near the top; capping keeps memory flat.
+    const reader = res.body?.getReader();
+    const decoder = new TextDecoder();
+    let html = "";
+    let m: RegExpMatchArray | null = null;
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      html += decoder.decode(value, { stream: true });
+      m = html.match(/videoId\\?"?:\\?"?([A-Za-z0-9_-]{11})/);
+      if (m || html.length > 500_000) {
+        await reader.cancel();
+        break;
+      }
+    }
     if (!m) return NextResponse.json({ error: "no video found" }, { status: 502 });
     const videoId = m[1];
     // cache so next time it's instant

@@ -198,7 +198,7 @@ export default async function DashboardPage() {
                   <li key={a.id} className="px-5 py-4">
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="min-w-0 flex-1">
-                        <Link href={`/services/${a.serviceId}?tab=team`} className="text-sm font-bold text-ink hover:text-brand-700">{a.service.title}</Link>
+                        <Link href={`/services/${a.serviceId}?tab=team`} className="text-sm font-bold text-ink hover:text-brand-700" prefetch={false}>{a.service.title}</Link>
                         <p className="text-xs text-ink/50">
                           {relativeDay(a.service.date, tz)} · {fmtTime(a.service.startTime)} — {a.positionName} · {a.team.name}
                         </p>
@@ -250,7 +250,7 @@ export default async function DashboardPage() {
         <SectionTitle>Quick actions</SectionTitle>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {canCreateService ? (
-            <Link href="/services/new" className="card flex flex-col items-center gap-2.5 p-4 text-center transition hover:border-brand-300 hover:shadow-pop">
+            <Link href="/services/new" className="card flex flex-col items-center gap-2.5 p-4 text-center transition hover:border-brand-300 hover:shadow-pop" prefetch={false}>
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-700 text-white"><Plus className="h-5 w-5" /></span>
               <span className="text-xs font-bold text-ink">Create Event</span>
             </Link>
@@ -271,7 +271,7 @@ export default async function DashboardPage() {
           <SectionTitle>Today</SectionTitle>
           <div className="grid gap-4 sm:grid-cols-2">
             {todays.map((svc) => (
-              <Link key={svc.id} href={`/services/${svc.id}`} className="card flex items-center gap-4 p-5 transition hover:border-brand-300">
+              <Link key={svc.id} href={`/services/${svc.id}`} className="card flex items-center gap-4 p-5 transition hover:border-brand-300" prefetch={false}>
                 <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-700 text-white">
                   <Church className="h-6 w-6" />
                 </span>
@@ -300,7 +300,7 @@ export default async function DashboardPage() {
       <div className={`grid gap-6 ${isVolunteer ? "" : "lg:grid-cols-2"}`}>
         {/* Upcoming services */}
         <Card>
-          <CardHeader title="Upcoming services" icon={<Church className="h-4 w-4" />} action={<Link href="/services" className="text-xs font-bold text-brand-700 hover:underline">All →</Link>} />
+          <CardHeader title="Upcoming services" icon={<Church className="h-4 w-4" />} action={<Link href="/services" className="text-xs font-bold text-brand-700 hover:underline" prefetch={false}>All →</Link>} />
           {upcoming.length === 0 ? (
             <EmptyState title="No services planned yet" hint="Create your first service to get rolling." icon={<CalendarPlus className="h-6 w-6" />} />
           ) : (
@@ -309,7 +309,7 @@ export default async function DashboardPage() {
                 const open = svc.assignments.filter((a) => a.status === "OPEN").length;
                 return (
                   <li key={svc.id}>
-                    <Link href={`/services/${svc.id}`} className="flex items-center gap-4 px-5 py-3.5 transition hover:bg-brand-50/50">
+                    <Link href={`/services/${svc.id}`} className="flex items-center gap-4 px-5 py-3.5 transition hover:bg-brand-50/50" prefetch={false}>
                       <div className="w-14 shrink-0 text-center">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-brand-500">
                           {new Date(svc.date + "T12:00:00Z").toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}
@@ -354,7 +354,7 @@ export default async function DashboardPage() {
                         {p.positionName} · {fmtDate(p.service.date, { year: undefined })}
                       </p>
                     </div>
-                    <Link href={`/services/${p.serviceId}?tab=team`} className="text-xs font-bold text-brand-700 hover:underline">Manage</Link>
+                    <Link href={`/services/${p.serviceId}?tab=team`} className="text-xs font-bold text-brand-700 hover:underline" prefetch={false}>Manage</Link>
                   </li>
                 ))}
               </ul>
@@ -369,7 +369,7 @@ export default async function DashboardPage() {
               <ul className="divide-y divide-line/70">
                 {rehearsals.map((r) => (
                   <li key={r.id}>
-                    <Link href={`/rehearsals/${r.id}`} className="flex items-center gap-4 px-5 py-3.5 transition hover:bg-brand-50/50">
+                    <Link href={`/rehearsals/${r.id}`} className="flex items-center gap-4 px-5 py-3.5 transition hover:bg-brand-50/50" prefetch={false}>
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold text-ink">{r.title}</p>
                         <p className="text-xs text-ink/50">{relativeDay(r.date, tz)} · {fmtTime(r.startTime)}{r.location ? ` · ${r.location}` : ""}</p>
@@ -407,7 +407,7 @@ export default async function DashboardPage() {
 
         {/* My tasks */}
         <Card>
-          <CardHeader title="My tasks" icon={<CheckCheck className="h-4 w-4" />} action={<Link href="/tasks" className="text-xs font-bold text-brand-700 hover:underline">All →</Link>} />
+          <CardHeader title="My tasks" icon={<CheckCheck className="h-4 w-4" />} action={<Link href="/tasks" className="text-xs font-bold text-brand-700 hover:underline" prefetch={false}>All →</Link>} />
           {tasks.length === 0 ? (
             <EmptyState title="No open tasks" hint="Nice and clear." />
           ) : (
@@ -454,7 +454,7 @@ function QuickLink({ href, icon, label, tone }: { href: string; icon: React.Reac
     "brand-light": "bg-brand-500 text-white",
   };
   return (
-    <Link href={href} className="card flex flex-col items-center gap-2.5 p-4 text-center transition hover:border-brand-300 hover:shadow-pop">
+    <Link href={href} className="card flex flex-col items-center gap-2.5 p-4 text-center transition hover:border-brand-300 hover:shadow-pop" prefetch={false}>
       <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}>{icon}</span>
       <span className="text-xs font-bold text-ink">{label}</span>
     </Link>

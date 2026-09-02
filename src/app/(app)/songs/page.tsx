@@ -143,7 +143,7 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
             return (
               <SwipeToDelete
               key={s.id} action={deleteSong} id={s.id} confirmLabel={s.title} enabled={isAdmin}>
-              <Link href={`/songs/${s.id}`} className="card flex flex-col gap-3 p-5 transition hover:border-brand-300 hover:shadow-pop">
+              <Link href={`/songs/${s.id}`} className="card flex flex-col gap-3 p-5 transition hover:border-brand-300 hover:shadow-pop" prefetch={false}>
                 <div className="flex items-start justify-between gap-2">
                   <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                     <Music2 className="h-5 w-5" />

@@ -67,7 +67,7 @@ export default async function CalendarPage({
           <p className="mt-1 text-sm text-ink/50">Services and rehearsals across your church</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/calendar?y=${prev.y}&m=${prev.m}`} className="btn-secondary btn-sm" aria-label="Previous month">←</Link>
+          <Link href={`/calendar?y=${prev.y}&m=${prev.m}`} className="btn-secondary btn-sm" aria-label="Previous month" prefetch={false}>←</Link>
           <span className="min-w-[10rem] text-center text-sm font-bold text-ink">{monthName}</span>
           <Link href={`/calendar?y=${nextM.y}&m=${nextM.m}`} className="btn-secondary btn-sm" aria-label="Next month">→</Link>
         </div>
@@ -112,7 +112,7 @@ export default async function CalendarPage({
                       className="block truncate rounded-md px-1.5 py-1 text-[11px] font-semibold text-white hover:opacity-90"
                       style={{ background: s.type?.color || "#323A8C" }}
                       title={`${s.title} ${s.startTime}`}
-                    >
+                     prefetch={false}>
                       <Church className="mr-1 inline h-3 w-3" />
                       {fmtTime(s.startTime).replace(" ", "")} {s.title}
                     </Link>
@@ -123,7 +123,7 @@ export default async function CalendarPage({
                       href={`/rehearsals/${r.id}`}
                       className="block truncate rounded-md border border-gold-300 bg-gold-100 px-1.5 py-1 text-[11px] font-semibold text-gold-800 hover:bg-gold-200"
                       title={`${r.title} ${r.startTime}`}
-                    >
+                     prefetch={false}>
                       <Music4 className="mr-1 inline h-3 w-3" />
                       {r.title}
                     </Link>

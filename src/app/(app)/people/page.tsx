@@ -145,7 +145,7 @@ Create their login now
           {people.map((p) => (
             <SwipeToDelete
               key={p.id} action={deletePerson} id={p.id} confirmLabel={p.name} enabled={isAdmin}>
-            <Link href={`/people/${p.id}`} className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition hover:bg-brand-50/50">
+            <Link href={`/people/${p.id}`} className="flex flex-wrap items-center gap-3 px-5 py-3.5 transition hover:bg-brand-50/50" prefetch={false}>
               <Avatar name={p.name} size={40} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-ink">{p.name}</p>

@@ -99,6 +99,7 @@ export function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 aria-current={isActive(item.href) ? "page" : undefined}
                 className={`wf-nav-item ${isActive(item.href) ? "wf-active" : ""}`}
               >

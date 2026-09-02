@@ -73,7 +73,7 @@ export default async function ServicesPage({
           </p>
         </div>
         {canManage && (
-          <Link href="/services/new" className="btn-primary">
+          <Link href="/services/new" className="btn-primary" prefetch={false}>
             <Plus className="h-4 w-4" /> New event
           </Link>
         )}
@@ -248,7 +248,7 @@ function ServiceTable({
             className={`flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center ${isPast ? "opacity-70" : ""}`}
           >
             <SwipeToDelete action={deleteService} id={svc.id} confirmLabel={svc.title} enabled={!!canDelete && !isPast}>
-            <Link href={`/services/${svc.id}`} className="flex w-full min-w-0 flex-1 items-center gap-4 sm:w-auto">
+            <Link href={`/services/${svc.id}`} className="flex w-full min-w-0 flex-1 items-center gap-4 sm:w-auto" prefetch={false}>
               <span
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[10px] font-extrabold uppercase leading-tight text-white"
                 style={{ background: svc.type?.color || "#323A8C" }}

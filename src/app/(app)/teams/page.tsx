@@ -116,7 +116,7 @@ export default async function TeamsPage() {
                 key={team.id}
                 href={`/teams/${team.id}`}
                 className="card flex flex-col gap-4 p-5 transition hover:border-brand-300 hover:shadow-pop"
-              >
+               prefetch={false}>
                 <div className="flex items-start justify-between gap-3">
                   <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-white" style={{ background: cat.color }}>
                     <Users className="h-5 w-5" />

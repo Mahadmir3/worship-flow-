@@ -66,6 +66,7 @@ export function MobileNav({ role }: { role: string }) {
               <Link
                 key={l.href}
                 href={l.href}
+                prefetch={false}
                 onClick={() => setMoreOpen(false)}
                 className="flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-[11px] font-medium text-ink/70 hover:bg-brand-50"
               >
@@ -86,6 +87,7 @@ export function MobileNav({ role }: { role: string }) {
             <Link
               key={t.href}
               href={t.href}
+              prefetch={false}
               className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold ${
                 isActive(t.href, t.exact) ? "text-brand-700" : "text-ink/45"
               }`}
