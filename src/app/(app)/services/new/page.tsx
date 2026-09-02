@@ -16,7 +16,9 @@ function nextSunday(from: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-export default async function NewServicePage() {
+export default async function NewServicePage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
+  const sp = await searchParams;
+  const presetDate = sp.date && /^\d{4}-\d{2}-\d{2}$/.test(sp.date) ? sp.date : null;
   const user = await requireUser();
   const allowed = await canDo(user, "manage_services");
 
@@ -90,7 +92,7 @@ export default async function NewServicePage() {
             </div>
             <div>
               <label className="label" htmlFor="n-date">Date</label>
-              <input id="n-date" name="date" type="date" required className="input" defaultValue={nextSunday(today)} />
+              <input id="n-date" name="date" type="date" required className="input" defaultValue={presetDate || nextSunday(today)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -102,6 +104,24 @@ export default async function NewServicePage() {
                 <input id="n-dur" name="durationMin" type="number" min={15} max={600} className="input" defaultValue={types[0]?.defaultDurationMin || 120} />
               </div>
             </div>
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div>
+                <label className="label" htmlFor="n-repeat">Repeats</label>
+                <select id="n-repeat" name="repeat" className="input" defaultValue="">
+                  <option value="">No — one day only</option>
+                  <option value="7">Every week</option>
+                  <option value="14">Every 2 weeks</option>
+                  <option value="28">Every 4 weeks</option>
+                </select>
+              </div>
+              <div>
+                <label className="label" htmlFor="n-until">Repeat until</label>
+                <input id="n-until" name="repeatUntil" type="date" className="input" />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-ink/50">
+              Example: “Every week” + an end date creates this event on every week until then — no need to add them one by one.
+            </p>
           </div>
         </fieldset>
 

@@ -21,17 +21,19 @@ import {
   Wand2,
   Share2,
   ListMusic,
+  Copy,
 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ASSIGNMENT_STATUS, ITEM_TYPES, SERVICE_STATUS } from "@/lib/constants";
 import { canAny, canDo as canDo2, isAdminTier, ledTeams } from "@/lib/perms";
-import { addMinutes, fmtDate, fmtDurationRange, fmtTime, relativeDay, todayIn } from "@/lib/format";
+import { addDays, addMinutes, fmtDate, fmtDurationRange, fmtTime, relativeDay, todayIn } from "@/lib/format";
 import { buildSuggestions } from "@/lib/scheduling";
 import { Avatar, Badge, Card, CardHeader, EmptyState } from "@/components/ui/primitives";
 import { Modal } from "@/components/ui/Modal";
 import {
   addServiceComment,
+  copyServiceToDay,
   saveAsTemplate,
   setServiceStatus,
 } from "@/actions/services";
@@ -201,6 +203,29 @@ export default async function ServiceDetailPage({
                   <button className="btn-secondary btn-sm"><CheckCheck className="h-3.5 w-3.5" /> Mark ready</button>
                 </form>
               )}
+              <Modal
+                title="Copy to another day"
+                trigger={<button className="btn-secondary btn-sm"><Copy className="h-3.5 w-3.5" /> Copy to another day</button>}
+              >
+                <ModalForm action={copyServiceToDay} className="space-y-4" successMessage="Copying…">
+                  <input type="hidden" name="serviceId" value={service.id} />
+                  <div>
+                    <label className="label" htmlFor="cp-date">Copy to date</label>
+                    <input id="cp-date" name="date" type="date" required className="input" defaultValue={addDays(service.date, 7)} />
+                  </div>
+                  <div>
+                    <label className="label" htmlFor="cp-weeks">Also repeat weekly?</label>
+                    <select id="cp-weeks" name="weeks" className="input" defaultValue="0">
+                      <option value="0">No — just that one day</option>
+                      <option value="4">Every week × 4 (about a month)</option>
+                      <option value="8">Every week × 8 (two months)</option>
+                      <option value="12">Every week × 12 (a quarter)</option>
+                    </select>
+                  </div>
+                  <p className="text-xs text-ink/50">Copies the plan, positions and people (as open — nobody is notified yet).</p>
+                  <button className="btn-primary w-full">Create copy</button>
+                </ModalForm>
+              </Modal>
               <Modal
                 title="Save as template"
                 trigger={<button className="btn-secondary btn-sm"><FileText className="h-3.5 w-3.5" /> Save as template</button>}

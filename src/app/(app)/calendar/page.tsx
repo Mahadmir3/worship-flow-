@@ -95,6 +95,15 @@ export default async function CalendarPage({
                 <p className={`mb-1 inline-flex h-6 w-6 items-center justify-center rounded-lg text-[11px] font-bold ${isToday ? "bg-gold-500 text-white" : "text-ink/45"}`}>
                   {Number(date.slice(8))}
                 </p>
+                {(!rec || (rec.services.length === 0 && rec.rehearsals.length === 0)) && (
+                  <Link
+                    href={`/services/new?date=${date}`}
+                    className="block rounded-md px-1 py-0.5 text-[10px] font-semibold text-brand-700/60 hover:bg-brand-50"
+                    aria-label={`New event on ${date}`}
+                  >
+                    + New
+                  </Link>
+                )}
                 <div className="space-y-1">
                   {rec?.services.slice(0, 2).map((s) => (
                     <Link

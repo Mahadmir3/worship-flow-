@@ -25,6 +25,40 @@ async function requireServiceEditor(serviceId?: string) {
   return { user, svc: null };
 }
 
+function datePlusDays(date: string, days: number): string {
+  const d = new Date(date + "T12:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+async function seedExtras(fd: FormData, organizationId: string, serviceId: string) {
+  // Seed open positions from the selected teams + apply a template if chosen.
+  const seedVals = fd.getAll("seedPositions").filter(Boolean) as string[];
+  const seedAll = seedVals.includes("on");
+  const seedTeamIds = seedVals.filter((v) => v !== "on");
+  if (seedAll || seedTeamIds.length) {
+    const teams = await prisma.team.findMany({
+      where: seedAll ? { organizationId } : { id: { in: seedTeamIds }, organizationId },
+      include: { positions: true },
+    });
+    for (const team of teams) {
+      for (const pos of team.positions) {
+        await prisma.assignment.create({ data: { serviceId, teamId: team.id, positionName: pos.name } });
+      }
+    }
+  }
+  const templateId = s(fd, "templateId");
+  if (templateId) {
+    const tpl = await prisma.serviceTemplate.findFirst({ where: { id: templateId, organizationId } });
+    if (tpl) {
+      const items = JSON.parse(tpl.items) as { title: string; type: string; durationSec: number }[];
+      await prisma.serviceItem.createMany({
+        data: items.map((it, i) => ({ ...it, serviceId, sortOrder: i })),
+      });
+    }
+  }
+}
+
 export async function createService(fd: FormData) {
   const { user } = await requireServiceEditor();
   const date = s(fd, "date");
@@ -55,38 +89,60 @@ export async function createService(fd: FormData) {
     },
   });
 
-  // Optionally seed open positions from the selected teams.
-  // "on" (sent by the onboarding form) means "seed every team".
-  const seedVals = fd.getAll("seedPositions").filter(Boolean) as string[];
-  const seedAll = seedVals.includes("on");
-  const seedTeamIds = seedVals.filter((v) => v !== "on");
-  if (seedAll || seedTeamIds.length) {
-    const teams = await prisma.team.findMany({
-      where: seedAll ? { organizationId: user.organizationId } : { id: { in: seedTeamIds }, organizationId: user.organizationId },
-      include: { positions: true },
-    });
-    for (const team of teams) {
-      for (const pos of team.positions) {
-        await prisma.assignment.create({ data: { serviceId: service.id, teamId: team.id, positionName: pos.name } });
+await seedExtras(fd, user.organizationId, service.id);
+
+  // Optional series: repeat every week / 2 weeks / 4 weeks until a date.
+  const step = Number(s(fd, "repeat")) || 0;
+  let created = 1;
+  if (step === 7 || step === 14 || step === 28) {
+    const until = s(fd, "repeatUntil") || datePlusDays(date, step * 11);
+    const cap = datePlusDays(date, step * 59);
+    const finalUntil = until > cap ? cap : until;
+    const taken = new Set(
+      (
+        await prisma.service.findMany({
+          where: { organizationId: user.organizationId, typeId: service.typeId, campusId: service.campusId },
+          select: { date: true },
+        })
+      ).map((x) => x.date)
+    );
+    let d = datePlusDays(date, step);
+    while (d <= finalUntil && created < 60) {
+      if (!taken.has(d)) {
+        const copy = await prisma.service.create({
+          data: {
+            organizationId: user.organizationId,
+            campusId: service.campusId,
+            venueId: service.venueId,
+            typeId: service.typeId,
+            title: service.title,
+            date: d,
+            startTime: service.startTime,
+            endTime: service.endTime,
+            worshipLeaderId: service.worshipLeaderId,
+            preacherId: service.preacherId,
+            serviceLeaderId: service.serviceLeaderId,
+            theme: service.theme,
+            scripture: service.scripture,
+            notes: service.notes,
+            folderId: service.folderId,
+          },
+        });
+        taken.add(d);
+        created++;
+        await seedExtras(fd, user.organizationId, copy.id);
       }
+      d = datePlusDays(d, step);
     }
   }
 
-  // Apply a template if chosen
-  const templateId = s(fd, "templateId");
-  if (templateId) {
-    const tpl = await prisma.serviceTemplate.findFirst({ where: { id: templateId, organizationId: user.organizationId } });
-    if (tpl) {
-      const items = JSON.parse(tpl.items) as { title: string; type: string; durationSec: number }[];
-      await prisma.serviceItem.createMany({
-        data: items.map((it, i) => ({ ...it, serviceId: service.id, sortOrder: i })),
-      });
-    }
-  }
-
-  await audit(user.organizationId, user.id, "service.create", "Service", service.id, { date, title: service.title });
+  await audit(user.organizationId, user.id, "service.create", "Service", service.id, { date, title: service.title, created });
   revalidatePath("/services");
   revalidatePath("/dashboard");
+  if (created > 1) {
+    revalidatePath("/calendar");
+    redirect("/calendar");
+  }
   const redirectTo = s(fd, "redirectTo");
   redirect(redirectTo.startsWith("/") ? redirectTo : `/services/${service.id}`);
 }
@@ -269,4 +325,88 @@ export async function addServiceComment(fd: FormData) {
   if (!body) return;
   await prisma.comment.create({ data: { serviceId, userId: user.id, body } });
   revalidatePath(`/services/${serviceId}`);
+}
+
+/** Copy an event (plan + positions + people) to another day — optionally weekly for N weeks. */
+export async function copyServiceToDay(fd: FormData) {
+  const serviceId = s(fd, "serviceId");
+  const { user } = await requireServiceEditor(serviceId);
+  const src = await prisma.service.findFirst({
+    where: { id: serviceId, organizationId: user.organizationId },
+    include: { items: true, assignments: true },
+  });
+  if (!src) throw new Error("Event not found");
+  const baseDate = s(fd, "date");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(baseDate)) throw new Error("Pick a date");
+  const weeks = Number(s(fd, "weeks")) || 0;
+  const count = weeks > 0 ? weeks : 1;
+
+  let firstId: string | null = null;
+  let created = 0;
+  for (let i = 0; i < count && created < 60; i++) {
+    const d = datePlusDays(baseDate, i * 7);
+    const dupe = await prisma.service.findFirst({
+      where: { organizationId: user.organizationId, typeId: src.typeId, campusId: src.campusId, date: d, title: src.title },
+      select: { id: true },
+    });
+    if (dupe) continue; // already have this event that day — skip quietly
+    const copy = await prisma.service.create({
+      data: {
+        organizationId: user.organizationId,
+        campusId: src.campusId,
+        venueId: src.venueId,
+        typeId: src.typeId,
+        title: src.title,
+        date: d,
+        startTime: src.startTime,
+        endTime: src.endTime,
+        worshipLeaderId: src.worshipLeaderId,
+        preacherId: src.preacherId,
+        serviceLeaderId: src.serviceLeaderId,
+        theme: src.theme,
+        scripture: src.scripture,
+        notes: src.notes,
+        folderId: src.folderId,
+        status: "PLANNING",
+      },
+    });
+    created++;
+    if (!firstId) firstId = copy.id;
+    if (src.items.length) {
+      await prisma.serviceItem.createMany({
+        data: src.items.map((it) => ({
+          serviceId: copy.id,
+          sortOrder: it.sortOrder,
+          title: it.title,
+          type: it.type,
+          durationSec: it.durationSec,
+          personId: it.personId,
+          teamId: it.teamId,
+          songId: it.songId,
+          key: it.key,
+          notes: it.notes,
+          color: it.color,
+          status: "PLANNED",
+          details: it.details,
+        })),
+      });
+    }
+    if (src.assignments.length) {
+      await prisma.assignment.createMany({
+        data: src.assignments.map((a) => ({
+          serviceId: copy.id,
+          teamId: a.teamId,
+          positionName: a.positionName,
+          personId: a.personId,
+          status: "OPEN",
+        })),
+      });
+    }
+  }
+
+  await audit(user.organizationId, user.id, "service.copy", "Service", src.id, { from: src.date, created });
+  revalidatePath("/services");
+  revalidatePath("/calendar");
+  revalidatePath("/dashboard");
+  redirect(firstId ? `/services/${firstId}` : `/services/${src.id}`);
 }
