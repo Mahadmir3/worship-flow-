@@ -350,6 +350,8 @@ model Song {
   ccliNumber  String?
   copyright   String?
   notes       String?
+  timeSignature String?
+  youtubeUrl  String?
   createdAt   DateTime @default(now())
 
   organization Organization  @relation(fields: [organizationId], references: [id])

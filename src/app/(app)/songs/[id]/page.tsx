@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileText, Link2, ListMusic, Music2, Plus } from "lucide-react";
+import { ArrowLeft, FileText, Link2, ListMusic, Music2, Plus, Youtube } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { canDo } from "@/lib/perms";
@@ -56,12 +56,23 @@ export default async function SongPage({
               <h1 className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{song.title}</h1>
               {song.defaultKey && <Badge className="border-brand-200 bg-brand-50 text-brand-700">Key {song.defaultKey}</Badge>}
               {song.bpm && <Badge className="border-line bg-paper text-ink/60">{song.bpm} BPM</Badge>}
+              {song.timeSignature && <Badge className="border-line bg-paper text-ink/60">{song.timeSignature}</Badge>}
               {song.genre && <Badge className="border-line bg-paper text-ink/60">{song.genre}</Badge>}
             </div>
             <p className="mt-2 text-sm text-ink/55">
               {song.artist || "Unknown artist"}
               {song.writer ? ` · written by ${song.writer}` : ""}
             </p>
+            {song.youtubeUrl && (
+              <a
+                href={song.youtubeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-sm font-bold text-white transition hover:bg-rose-700"
+              >
+                <Youtube className="h-4 w-4" /> Listen on YouTube
+              </a>
+            )}
             <p className="mt-1 text-xs text-ink/40">
               {song.ccliNumber ? `CCLI #${song.ccliNumber}` : "No CCLI number"}
               {song.copyright ? ` · ${song.copyright}` : ""}
