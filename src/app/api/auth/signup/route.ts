@@ -64,16 +64,19 @@ export async function POST(req: NextRequest) {
   }
 
   const slug = `${orgName.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 30)}-${Math.random().toString(36).slice(2, 6)}`;
-  const org = await prisma.organization.create({ data: { name: orgName, slug } });
-  const campus = await prisma.campus.create({
+  // All-or-nothing: if anything fails mid-signup (crash, blip), nothing is
+  // left behind — no more half-created churches that block the next attempt.
+  const { org, user } = await prisma.$transaction(async (tx) => {
+  const org = await tx.organization.create({ data: { name: orgName, slug } });
+  const campus = await tx.campus.create({
     data: { organizationId: org.id, name: "Main Campus" },
   });
-  await prisma.venue.create({ data: { campusId: campus.id, name: "Main Auditorium" } });
+  await tx.venue.create({ data: { campusId: campus.id, name: "Main Auditorium" } });
   for (const t of DEFAULT_TYPES) {
-    await prisma.serviceType.create({ data: { organizationId: org.id, ...t } });
+    await tx.serviceType.create({ data: { organizationId: org.id, ...t } });
   }
   for (const t of DEFAULT_TEAMS) {
-    await prisma.team.create({
+    await tx.team.create({
       data: {
         organizationId: org.id,
         campusId: campus.id,
@@ -84,10 +87,10 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const person = await prisma.person.create({
+  const person = await tx.person.create({
     data: { organizationId: org.id, name, email, campusId: campus.id },
   });
-  const user = await prisma.user.create({
+  const user = await tx.user.create({
     data: {
       organizationId: org.id,
       email,
@@ -104,10 +107,13 @@ export async function POST(req: NextRequest) {
     { name: "Worship Team", purpose: "Music & worship coordination" },
     { name: "Production", purpose: "Sound, lighting, media" },
   ]) {
-    await prisma.channel.create({
+    await tx.channel.create({
       data: { organizationId: org.id, name: c.name, slug: `${c.name.toLowerCase().replace(/\s+/g, "-")}-${org.id}`, purpose: c.purpose },
     });
   }
+
+    return { org, user };
+  });
 
   // Same embedded-preview fix as login: frame-friendly (SameSite=None) cookie when
   // served over https, plus ?wf_token= fallback — middleware promotes it to the
