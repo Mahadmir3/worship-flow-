@@ -69,11 +69,29 @@ function lazyProxy(path: string[] = []): any {
       return lazyProxy([...path, prop]);
     },
     apply(_t, _thisArg, args) {
-      return getPrisma().then((client) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let value: any = client;
-        for (const key of path) value = value?.[key];
-        return typeof value === "function" ? value.apply(client, args) : value;
+      const run = () =>
+        getPrisma().then((client) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let value: any = client;
+          for (const key of path) value = value?.[key];
+          return typeof value === "function" ? value.apply(client, args) : value;
+        });
+      return run().catch((err: unknown) => {
+        // The Supabase pooler very rarely drops an idle connection mid-request
+        // ("Connection closed." / "Network connection lost"). Reads are safe to
+        // retry once after a beat — that heals the blip instead of showing an
+        // error page. Writes are NOT retried (could double-apply).
+        const op = path[path.length - 1];
+        const msg = err instanceof Error ? err.message : String(err);
+        const read =
+          /^(findMany|findFirst|findUnique|findUniqueOrThrow|findFirstOrThrow|count|aggregate|groupBy|\$queryRaw|\$queryRawUnsafe)$/.test(op);
+        const conn = /Connection closed|Network connection lost|Connection terminated|ECONNRESET|Connection ended/i.test(msg);
+        if (read && conn) {
+          return new Promise((resolve, reject) =>
+            setTimeout(() => run().then(resolve, reject), 350)
+          );
+        }
+        throw err;
       });
     },
   });
