@@ -11,7 +11,9 @@ import { Modal } from "@/components/ui/Modal";
 import { addArrangement, updateArrangement } from "@/actions/songs";
 import { addMediaLink } from "@/actions/media";
 import { ChartView } from "@/components/ChartView";
-import { MusicPlayer, youTubeId } from "@/components/MusicPlayer";
+import { MusicPlayer } from "@/components/MusicPlayer";
+import { youTubeId } from "@/lib/youtube";
+import { SongPlayer } from "@/components/SongPlayer";
 
 export const metadata = { title: "Song" };
 
@@ -64,14 +66,13 @@ export default async function SongPage({
               {song.writer ? ` · written by ${song.writer}` : ""}
             </p>
             {song.youtubeUrl && (
-              <a
-                href={song.youtubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-sm font-bold text-white transition hover:bg-rose-700"
-              >
-                <Youtube className="h-4 w-4" /> Listen on YouTube
-              </a>
+              <div className="mt-4 max-w-xl">
+                <SongPlayer
+                  songId={song.id}
+                  videoId={youTubeId(song.youtubeUrl)}
+                  fallbackUrl={song.youtubeUrl}
+                />
+              </div>
             )}
             <p className="mt-1 text-xs text-ink/40">
               {song.ccliNumber ? `CCLI #${song.ccliNumber}` : "No CCLI number"}

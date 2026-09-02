@@ -173,8 +173,4 @@ function fmtSec(s: number): string {
   return `${m}:${String(r).padStart(2, "0")}`;
 }
 
-export function youTubeId(url?: string | null): string | null {
-  if (!url) return null;
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/);
-  return m ? m[1] : null;
-}
+export { youTubeId } from "@/lib/youtube";
