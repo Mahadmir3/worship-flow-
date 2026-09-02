@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   CalendarCheck,
   CalendarOff,
+  KeyRound,
   Mail,
   Phone,
   Trash2,
@@ -16,7 +17,10 @@ import { canDo } from "@/lib/perms";
 import { fmtDate, relativeDay, todayIn } from "@/lib/format";
 import { Avatar, Badge, Card, CardHeader, EmptyState } from "@/components/ui/primitives";
 import { Modal } from "@/components/ui/Modal";
-import { addBlockout, removeBlockout, updatePerson } from "@/actions/teams";
+import { addBlockout, createAccount, deleteAccount, removeBlockout, setAccountPassword, updatePerson } from "@/actions/teams";
+import { isAdminTier } from "@/lib/perms";
+import { ModalForm } from "@/components/ModalForm";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 export const metadata = { title: "Person" };
 
@@ -46,6 +50,7 @@ export default async function PersonPage({ params: paramsPromise }: { params: Pr
   const campuses = await prisma.campus.findMany({ where: { organizationId: user.organizationId } });
   const manage = await canDo(user, "manage_people");
   const isSelf = person.id === user.personId;
+  const isAdmin = isAdminTier(user);
 
   const upcoming = person.assignments.filter((a) => a.service.date >= today).reverse();
   const past = person.assignments.filter((a) => a.service.date < today);
@@ -170,6 +175,66 @@ export default async function PersonPage({ params: paramsPromise }: { params: Pr
         </Card>
 
         <div className="space-y-6">
+          {isAdmin && (
+            <Card>
+              <CardHeader title="Login & account" subtitle="Who can sign in" icon={<KeyRound className="h-4 w-4" />} />
+              <div className="space-y-3 p-5">
+                {person.user ? (
+                  <>
+                    <div className="rounded-xl border border-line bg-paper px-3.5 py-3">
+                      <p className="truncate text-sm font-semibold text-ink">{person.user.email}</p>
+                      <p className="text-xs text-ink/50">{ROLE_LABEL[person.user.role] || person.user.role} · has a login</p>
+                    </div>
+                    <Modal title="Change password" trigger={<button className="btn-secondary btn-sm w-full">Change password</button>}>
+                      <ModalForm action={setAccountPassword} className="space-y-4" successMessage="Saving new password…">
+                        <input type="hidden" name="personId" value={person.id} />
+                        <div>
+                          <label className="label" htmlFor="pw-new">New password</label>
+                          <input id="pw-new" name="newPassword" type="text" required minLength={8} className="input font-mono" autoComplete="off" />
+                        </div>
+                        <div>
+                          <label className="label" htmlFor="pw-confirm">Confirm password</label>
+                          <input id="pw-confirm" name="confirmPassword" type="text" required minLength={8} className="input font-mono" autoComplete="off" />
+                        </div>
+                        <p className="text-xs text-ink/50">They are signed out everywhere and will use this password next time.</p>
+                        <button className="btn-primary w-full">Save password</button>
+                      </ModalForm>
+                    </Modal>
+                    {person.user.id === user.id ? (
+                      <p className="text-center text-xs text-ink/40">This is your own account.</p>
+                    ) : (
+                      <ConfirmButton
+                        action={deleteAccount}
+                        fields={{ personId: person.id }}
+                        confirm={`Remove the login for ${person.user.email}? Their profile and history stay — they just cannot sign in anymore.`}
+                        className="btn-secondary btn-sm w-full text-rose-600"
+                        pendingLabel="Removing…"
+                      >
+                        Remove login
+                      </ConfirmButton>
+                    )}
+                  </>
+                ) : person.email ? (
+                  <Modal title={`Create login for ${person.name.split(" ")[0]}`} trigger={<button className="btn-primary btn-sm w-full">Create login</button>}>
+                    <ModalForm action={createAccount} className="space-y-4">
+                      <input type="hidden" name="personId" value={person.id} />
+                      <p className="text-sm text-ink/60">Sign-in email: <span className="font-semibold text-ink">{person.email}</span></p>
+                      <div>
+                        <label className="label" htmlFor="ca-pw">Password (optional)</label>
+                        <input id="ca-pw" name="tempPassword" type="text" className="input font-mono" placeholder="Leave empty → we make one for you" autoComplete="off" />
+                        <p className="mt-1 text-xs text-ink/50">At least 8 characters. If empty, we generate one and show it to you once.</p>
+                      </div>
+                      <button className="btn-primary w-full">Create login</button>
+                    </ModalForm>
+                  </Modal>
+                ) : (
+                  <p className="rounded-xl border border-dashed border-line px-4 py-3 text-center text-xs text-ink/50">
+                    Add an email to this profile first, then you can create a login.
+                  </p>
+                )}
+              </div>
+            </Card>
+          )}
           <Card>
             <CardHeader title="Availability" subtitle="Blocked dates & recurring" icon={<CalendarOff className="h-4 w-4" />} />
             <div className="p-5">

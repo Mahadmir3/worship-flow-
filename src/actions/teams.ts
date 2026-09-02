@@ -124,8 +124,10 @@ export async function createPerson(fd: FormData) {
       revalidatePath("/people");
       redirect(`/people/${person.id}`);
     }
+    const chosen = s(fd, "tempPassword");
+    if (chosen && chosen.length < 8) throw new Error("Password must be at least 8 characters");
     const tempPassword =
-      s(fd, "tempPassword") || crypto.randomBytes(4).toString("hex").toUpperCase() + "!" + Math.floor(10 + Math.random() * 89);
+      chosen || crypto.randomBytes(4).toString("hex").toUpperCase() + "!" + Math.floor(10 + Math.random() * 89);
     await prisma.user.create({
       data: {
         organizationId: user.organizationId,
@@ -246,4 +248,68 @@ export async function setPreferredFrequency(fd: FormData) {
     data: { preferredFrequency: Number(s(fd, "preferredFrequency", "2")) || 2 },
   });
   revalidatePath("/schedule");
+}
+
+/** Admin/Owner only: create a login for an existing person (password optional). */
+export async function createAccount(fd: FormData) {
+  const user = await requireUser();
+  if (!isAdminTier(user)) throw new Error("Only admins can create logins");
+  const personId = s(fd, "personId");
+  const person = await prisma.person.findFirst({ where: { id: personId, organizationId: user.organizationId } });
+  if (!person) throw new Error("Person not found");
+  if (!person.email) throw new Error("Add an email to this profile first");
+  const existing = await prisma.user.findUnique({ where: { email: person.email } });
+  if (existing) throw new Error("That email already has a login");
+  const chosen = s(fd, "tempPassword");
+  if (chosen && chosen.length < 8) throw new Error("Password must be at least 8 characters");
+  const tempPassword =
+    chosen || crypto.randomBytes(4).toString("hex").toUpperCase() + "!" + Math.floor(10 + Math.random() * 89);
+  await prisma.user.create({
+    data: {
+      organizationId: user.organizationId,
+      email: person.email,
+      name: person.name,
+      role: "VOLUNTEER",
+      passwordHash: hashPassword(tempPassword),
+      personId: person.id,
+    },
+  });
+  await audit(user.organizationId, user.id, "user.create", "User", person.id, { email: person.email });
+  revalidatePath(`/people/${person.id}`);
+  revalidatePath("/people");
+  return { ok: true, tempEmail: person.email, tempPassword };
+}
+
+/** Admin/Owner only: set a new password for any account in the organization. */
+export async function setAccountPassword(fd: FormData) {
+  const user = await requireUser();
+  if (!isAdminTier(user)) throw new Error("Only admins can change account passwords");
+  const personId = s(fd, "personId");
+  const newPassword = s(fd, "newPassword");
+  if (newPassword.length < 8) throw new Error("Password must be at least 8 characters");
+  if (newPassword !== s(fd, "confirmPassword")) throw new Error("Passwords do not match");
+  const target = await prisma.user.findFirst({ where: { personId, organizationId: user.organizationId } });
+  if (!target) throw new Error("This person has no login");
+  await prisma.user.update({ where: { id: target.id }, data: { passwordHash: hashPassword(newPassword) } });
+  // sign the account out everywhere so the new password takes effect cleanly
+  await prisma.session.deleteMany({ where: { userId: target.id } });
+  await audit(user.organizationId, user.id, "user.password", "User", target.id, { email: target.email });
+  revalidatePath(`/people/${personId}`);
+  return { ok: true };
+}
+
+/** Admin/Owner only: remove someone's login (their profile and history stay). */
+export async function deleteAccount(fd: FormData) {
+  const user = await requireUser();
+  if (!isAdminTier(user)) throw new Error("Only admins can delete accounts");
+  const personId = s(fd, "personId");
+  const target = await prisma.user.findFirst({ where: { personId, organizationId: user.organizationId } });
+  if (!target) return;
+  if (target.id === user.id) throw new Error("You cannot delete your own account");
+  if (target.role === "OWNER" && user.role !== "OWNER") throw new Error("Only the owner can delete the owner account");
+  await prisma.session.deleteMany({ where: { userId: target.id } });
+  await prisma.user.delete({ where: { id: target.id } });
+  await audit(user.organizationId, user.id, "user.delete", "User", target.id, { email: target.email });
+  revalidatePath(`/people/${personId}`);
+  revalidatePath("/people");
 }

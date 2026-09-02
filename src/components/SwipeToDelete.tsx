@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 
@@ -21,6 +22,7 @@ export function SwipeToDelete({
   children: React.ReactNode;
   enabled?: boolean;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [dx, setDx] = useState(0);
   const [pending, start] = useTransition();
@@ -47,6 +49,7 @@ export function SwipeToDelete({
     start(async () => {
       try {
         await action(fd);
+        router.refresh(); // make sure the list shows the new state
       } catch (e) {
         alert(e instanceof Error ? e.message : "Could not delete");
       }

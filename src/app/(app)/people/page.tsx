@@ -111,6 +111,11 @@ export default async function PeoplePage({
 Create their login now
 </label>
 <p className="mt-1 text-xs text-ink/50">Generates a temporary password you can share — they change it after first login. (Needs an email above.)</p>
+                <div className="mt-3">
+                  <label className="label" htmlFor="pe-temp">Password (optional)</label>
+                  <input id="pe-temp" name="tempPassword" type="text" className="input font-mono" placeholder="Leave empty → we make one for you" autoComplete="off" />
+                  <p className="mt-1 text-xs text-ink/50">Type your own password (at least 8 characters), or leave empty for an automatic one.</p>
+                </div>
 </div>
 </ModalForm>
           </Modal>
