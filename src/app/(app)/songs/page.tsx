@@ -13,21 +13,37 @@ import { SwipeToDelete } from "@/components/SwipeToDelete";
 
 export const metadata = { title: "Songs" };
 
-export default async function SongsPage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ q?: string }> }) {
-  const searchParams = await searchParamsPromise;
-  const user = await requireUser();
-  const q = (searchParams.q || "").trim();
+const PER_PAGE = 60;
 
-  const songs = await prisma.song.findMany({
-    where: {
-      organizationId: user.organizationId,
-      ...(q
-        ? { OR: [{ title: { contains: q } }, { artist: { contains: q } }, { tags: { contains: q } }] }
-        : {}),
-    },
-    include: { arrangements: true, items: { include: { service: true } } },
-    orderBy: { title: "asc" },
-  });
+export default async function SongsPage({ searchParams: searchParamsPromise }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+  const sp = await searchParamsPromise;
+  const user = await requireUser();
+  const q = (sp.q || "").trim();
+  const page = Math.max(1, Number(sp.page) || 1);
+
+  const where = {
+    organizationId: user.organizationId,
+    ...(q
+      ? { OR: [{ title: { contains: q } }, { artist: { contains: q } }, { tags: { contains: q } }] }
+      : {}),
+  };
+  // Slim fetch: ids for arrangement count + service DATES only (not whole objects)
+  // and one page at a time — keeps memory flat even with a huge library.
+  const [songs, total] = await Promise.all([
+    prisma.song.findMany({
+      where,
+      select: {
+        id: true, title: true, artist: true, defaultKey: true, bpm: true, genre: true, tags: true,
+        arrangements: { select: { id: true } },
+        items: { select: { service: { select: { date: true } } } },
+      },
+      orderBy: { title: "asc" },
+      skip: (page - 1) * PER_PAGE,
+      take: PER_PAGE,
+    }),
+    prisma.song.count({ where }),
+  ]);
+  const pages = Math.max(1, Math.ceil(total / PER_PAGE));
 
   const manage = await canDo(user, "manage_songs");
   const isAdmin = isAdminTier(user);
@@ -37,7 +53,7 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-ink">Song library</h1>
-          <p className="mt-1 text-sm text-ink/50">{songs.length} songs with charts, lyrics & arrangements</p>
+          <p className="mt-1 text-sm text-ink/50">{total} songs with charts, lyrics & arrangements</p>
         </div>
         {manage && (
           <Modal
@@ -112,7 +128,7 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
         <button className="btn-secondary">Search</button>
       </form>
 
-      {songs.length === 0 ? (
+      {total === 0 ? (
         <div className="card">
           <EmptyState icon={<ListMusic className="h-6 w-6" />} title="No songs yet" hint="Build your church's worship library — charts, lyrics, keys and media for every song." />
         </div>
@@ -154,6 +170,18 @@ export default async function SongsPage({ searchParams: searchParamsPromise }: {
               </SwipeToDelete>
             );
           })}
+        </div>
+      )}
+
+      {pages > 1 && (
+        <div className="flex items-center justify-between">
+          {page > 1 ? (
+            <Link href={`/songs?q=${encodeURIComponent(q)}&page=${page - 1}`} className="btn-secondary btn-sm">← Previous</Link>
+          ) : <span />}
+          <p className="text-xs font-semibold text-ink/45">Page {page} of {pages}</p>
+          {page < pages ? (
+            <Link href={`/songs?q=${encodeURIComponent(q)}&page=${page + 1}`} className="btn-secondary btn-sm">Next →</Link>
+          ) : <span />}
         </div>
       )}
     </div>

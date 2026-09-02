@@ -38,7 +38,7 @@ function createClient(): Promise<PrismaClient> {
       return new PrismaClient({
         adapter: new PrismaPg({
           connectionString: url,
-          max: 10,
+          max: 2,
           idleTimeoutMillis: 10_000,
           connectionTimeoutMillis: 8_000,
         }),
