@@ -75,50 +75,6 @@ export function LoginForm({ returnTo }: { returnTo: string }) {
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
-      <PersonaButtons onLogin={login} busy={busy} />
     </>
-  );
-}
-
-function PersonaButtons({
-  onLogin,
-  busy,
-}: {
-  onLogin: (body: Record<string, string>) => void;
-  busy: boolean;
-}) {
-  const personas = [
-    { email: "david@gracecommunity.ug", name: "David Mukisa", role: "Owner" },
-    { email: "mary@gracecommunity.ug", name: "Mary Achieng", role: "Administrator" },
-    { email: "sarah@gracecommunity.ug", name: "Sarah Nakato", role: "Volunteer (Lead Vocal)" },
-    { email: "james@gracecommunity.ug", name: "James Okello", role: "Volunteer (Guitarist)" },
-    { email: "grace@gracecommunity.ug", name: "Grace Atim", role: "Dept. Leader — Production" },
-    { email: "robert@gracecommunity.ug", name: "Robert Kigongo", role: "Volunteer (Teaching)" },
-  ];
-  return (
-    <div className="mt-6 rounded-2xl border border-gold-200 bg-gold-50 p-4">
-      <p className="text-sm font-bold text-gold-800">Explore the demo — one click</p>
-      <p className="mt-1 text-xs text-gold-800/70">
-        Every persona below is pre-loaded with Grace Community Church's live demo data.
-        Password for all demo accounts: <code className="font-bold">grace2026</code>
-      </p>
-      <div className="mt-3 grid gap-2">
-        {personas.map((u) => (
-          <button
-            key={u.email}
-            type="button"
-            disabled={busy}
-            onClick={() => onLogin({ email: u.email, password: "grace2026" })}
-            className="flex w-full items-center justify-between rounded-xl border border-gold-200 bg-surface px-3.5 py-2.5 text-left transition hover:border-gold-400 hover:bg-gold-100/60 disabled:opacity-50"
-          >
-            <span>
-              <span className="block text-sm font-semibold text-ink">{u.name}</span>
-              <span className="block text-xs text-ink/50">{u.role}</span>
-            </span>
-            <span className="text-xs font-bold text-gold-700">Sign in →</span>
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }

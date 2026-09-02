@@ -55,9 +55,6 @@ export default async function LoginPage({
             ))}
           </div>
         </div>
-        <p className="relative mt-10 text-xs text-brand-100/50">
-          Demo: Grace Community Church · Kampala, Uganda
-        </p>
       </div>
 
       {/* Form panel */}
